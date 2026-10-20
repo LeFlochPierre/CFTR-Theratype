@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cftr-theratype"
+version = "0.1.0"
+description = "Reproducible public-data CFTR theratyping research"
+requires-python = ">=3.11"
+dependencies = [
+    "numpy",
+    "pandas",
+    "openpyxl",
+    "xlrd",
+    "biopython",
+]
+
+[project.scripts]
+cftr-data = "cftr_theratype.data:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

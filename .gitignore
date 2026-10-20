@@ -1,0 +1,26 @@
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.pytest_cache/
+.env
+data/raw/
+data/interim/
+data/processed/
+results/
+logs/
+*.egg-info/
+
+# Scientific datasets and generated artifacts
+data/raw/
+data/interim/
+data/processed/
+results/
+logs/
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+.venv/
+.env

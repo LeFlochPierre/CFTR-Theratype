@@ -1,0 +1,17 @@
+{
+  "source": "McDonald et al., PLOS ONE 2024, Supplementary Table S3",
+  "doi": "10.1371/journal.pone.0297560",
+  "underlying_assays": "Bihler et al., CFTR functional experiments",
+  "source_sha256": "28f721c1795b2516653c9f5383521697ed11b5fa851b75a68b4be1584c1ea269",
+  "n_rows": 585,
+  "n_unique_variants": 581,
+  "treatments": {
+    "DMSO": 585
+  },
+  "reference_length": 1480,
+  "sequence_validation": {
+    "MATCH": 585
+  },
+  "duplicate_variant_treatment_rows": 7,
+  "primary_theratyping_labels_verified": false
+}

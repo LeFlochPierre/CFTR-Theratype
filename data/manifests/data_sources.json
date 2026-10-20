@@ -1,0 +1,56 @@
+{
+  "reference": "UniProt P13569",
+  "reference_length": 1480,
+  "reference_sha256": "0574a2437b33ae9ac901e8c0bf86c568685bf677361987127fccd9574f515826",
+  "workbooks": [
+    {
+      "path": "data/raw/bihler_2024/mmc3.xlsx",
+      "sha256": "bbc759607c333e64fa6b228c4f29c62939d27fa5d4157a937bd9944476d395ce",
+      "sheets": [
+        {
+          "name": "Table S1",
+          "raw_rows": 1332,
+          "raw_columns": 26
+        }
+      ]
+    },
+    {
+      "path": "data/raw/mcdonald_2024/table_s3.xlsx",
+      "sha256": "28f721c1795b2516653c9f5383521697ed11b5fa851b75a68b4be1584c1ea269",
+      "sheets": [
+        {
+          "name": "Supp Table 3",
+          "raw_rows": 586,
+          "raw_columns": 25
+        },
+        {
+          "name": "Legend",
+          "raw_rows": 1,
+          "raw_columns": 1
+        }
+      ],
+      "qc": {
+        "rows": 585,
+        "unique_variants": 581,
+        "reference_matches": 585,
+        "reference_mismatches": [],
+        "unparseable_variants": [],
+        "repeated_variants": {
+          "S549R": 3,
+          "G551D": 2,
+          "W361R": 2
+        }
+      }
+    }
+  ],
+  "bihler_2024_build": {
+    "source_sha256": "bbc759607c333e64fa6b228c4f29c62939d27fa5d4157a937bd9944476d395ce",
+    "n_source_records": 1320,
+    "n_unambiguous_pairs": 652,
+    "n_complete_pairs": 652,
+    "n_unresolved_identifiers": 5,
+    "label_unit": "percentage points of wild-type CFTR function",
+    "eti_rescue_definition": "ELX/TEZ-pretreated FSK+IVA %WT minus DMSO-pretreated FSK %WT",
+    "warning": "In vitro FRT-cell response, not clinical treatment benefit. Unresolved duplicate conditions excluded without aggregation."
+  }
+}
