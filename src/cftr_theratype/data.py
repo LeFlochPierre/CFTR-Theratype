@@ -134,7 +134,9 @@ def inspect():
     if not workbooks:
         raise FileNotFoundError(f"No Excel workbooks found under {RAW}")
 
+    previous = json.loads(MANIFEST.read_text()) if MANIFEST.exists() else {}
     manifest = {
+        **previous,
         "reference": "UniProt P13569",
         "reference_length": len(sequence),
         "reference_sha256": checksum(FASTA),
@@ -200,15 +202,26 @@ def inspect():
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=["inspect", "build", "split", "baseline", "cv", "embed"])
+    parser.add_argument("command", choices=["inspect", "build", "split", "baseline", "cv", "embed", "plm", "crossstudy", "transfer"])
     parser.add_argument("--smoke", action="store_true", help="Run a small embedding test")
+    parser.add_argument(
+        "--study",
+        choices=["2024", "2026"],
+        default="2024",
+        help="Study to ingest with the build command",
+    )
+    parser.add_argument("--stage", choices=["prepare", "fit", "diagnose", "mechanism", "reliability"], default="prepare")
     args = parser.parse_args()
 
     if args.command == "inspect":
         inspect()
     elif args.command == "build":
-        from cftr_theratype.build import build
-        build()
+        if args.study == "2024":
+            from cftr_theratype.build import build
+            build()
+        else:
+            from cftr_theratype.ingest.bihler2026 import build_2026
+            build_2026()
     elif args.command == "split":
         from cftr_theratype.splits import build_splits
         build_splits()
@@ -221,6 +234,15 @@ def main():
     elif args.command == "embed":
         from cftr_theratype.features.esm2 import extract_embeddings
         extract_embeddings(smoke=args.smoke)
+    elif args.command == "plm":
+        from cftr_theratype.plm import run_plm
+        run_plm()
+    elif args.command == "crossstudy":
+        from cftr_theratype.cross_study import run_cross_study
+        run_cross_study()
+    elif args.command == "transfer":
+        from cftr_theratype.transfer import run_transfer
+        run_transfer(stage=args.stage)
 
 
 if __name__ == "__main__":

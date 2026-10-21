@@ -1,0 +1,358 @@
+{
+  "schema_version": "1.0",
+  "snapshot_date": "2026-10-21",
+  "project": "CFTR-Theratype",
+  "repository": "https://github.com/LeFlochPierre/CFTR-Theratype",
+  "provenance": "Transcribed from the user-provided terminal outputs in this conversation; not rerun on the RTX6 workstation. Verify against local logs before publication.",
+  "units": {
+    "continuous_response": "percentage points of wild-type CFTR function",
+    "MAE": "percentage points of wild-type function",
+    "rho": "Spearman rank correlation"
+  },
+  "data_sources": [
+    {
+      "study": "Bihler 2024 ETI",
+      "path": "data/raw/bihler_2024/mmc3.xlsx",
+      "sha256": "bbc759607c333e64fa6b228c4f29c62939d27fa5d4157a937bd9944476d395ce",
+      "raw_rows": 1320,
+      "treatment_rows": {
+        "DMSO": 661,
+        "ELX + TEZ": 659
+      },
+      "unambiguous_pairs": 652,
+      "missense_eligible": 586,
+      "non_missense_or_other": 66,
+      "unresolved_identifiers": 5
+    },
+    {
+      "study": "Bihler 2026 VTI",
+      "path": "data/raw/bihler_2026/mmc1.xlsx",
+      "sha256": "92c4fdea737ba6e4499b1cb7a4f62fe21b56330323fe899908b63d5abdd93b23",
+      "raw_rows": 837,
+      "treatment_rows": {
+        "DMSO": 419,
+        "VX121+VX661": 418
+      },
+      "usable_pairs": 415,
+      "study_strata": {
+        "VTI": 271,
+        "ETI, VTI": 144
+      },
+      "exact_cdna_overlaps_with_2024": 145,
+      "no_overlap_cdna": 270,
+      "variant_status": {
+        "missense_position_parsed": 357,
+        "non_missense": 53,
+        "unparseable_missense": 5
+      }
+    },
+    {
+      "study": "McDonald 2024 (derived subset)",
+      "path": "data/raw/mcdonald_2024/table_s3.xlsx",
+      "sha256": "28f721c1795b2516653c9f5383521697ed11b5fa851b75a68b4be1584c1ea269",
+      "rows": 585,
+      "unique_variant_strings": 581,
+      "treatments": [
+        "DMSO"
+      ],
+      "warning": "Bihler-derived; must not be treated as independent external validation."
+    }
+  ],
+  "reference": {
+    "uniprot": "P13569",
+    "protein_length": 1480,
+    "assay_background": "M at position 470 versus canonical UniProt V",
+    "assay_note": "Modeling and variants relative to Bihler 2024 assay background; confirm 2026 assay reference independently before combined protein-feature models."
+  },
+  "labels": {
+    "eti_total_rescue_pp": "ELX/TEZ-pretreated FSK+IVA %WT minus DMSO FSK %WT",
+    "vti_total_rescue_pp": "VNZ/TEZ-pretreated FSK+IVA %WT minus DMSO FSK %WT",
+    "eti_corrector_increment_pp": "ELX/TEZ-pretreated FSK+IVA %WT minus DMSO FSK+IVA %WT",
+    "vti_corrector_increment_pp": "VNZ/TEZ-pretreated FSK+IVA %WT minus DMSO FSK+IVA %WT",
+    "interpretation": "In-vitro rescue only, not clinical benefit; separated studies are not head-to-head drug effectiveness."
+  },
+  "frozen_splits": {
+    "eti_missense": {
+      "train": {
+        "variants": 422,
+        "positions": 298
+      },
+      "validation": {
+        "variants": 56,
+        "positions": 43
+      },
+      "test": {
+        "variants": 108,
+        "positions": 86
+      },
+      "test_evaluated": false,
+      "strategy": "protein-position-disjoint GroupShuffleSplit; train-only repeated position CV"
+    },
+    "vti_transfer": {
+      "train": {
+        "variants": 210,
+        "positions": 168
+      },
+      "validation": {
+        "variants": 52,
+        "positions": 42
+      },
+      "test": {
+        "variants": 33,
+        "positions": 26
+      },
+      "excluded": {
+        "variants": 120,
+        "positions": 45
+      },
+      "protected_2024_val_test_position_variants": 62,
+      "test_evaluated": false,
+      "strategy": "new VTI test from previously unseen 2024 mutation positions; original 2024 val/test positions excluded"
+    },
+    "exact_matched_training": {
+      "variants": 66,
+      "positions": 56
+    }
+  },
+  "modeling": {
+    "eti_cv": {
+      "n_training_variants": 422,
+      "repeats": 3,
+      "folds": 5,
+      "position_mae_pp": {
+        "sequence_forest": 22.983,
+        "sequence_forest_no_position": 23.451,
+        "sequence_ridge": 23.826,
+        "position_forest": 24.035,
+        "median": 24.128,
+        "position_ridge": 24.32
+      },
+      "sequence_forest_gain_vs_median_pp": 1.145,
+      "gain_95pct_ci_pp": [
+        0.091,
+        2.209
+      ],
+      "forest_gain_vs_ridge_pp": 0.843,
+      "forest_vs_ridge_gain_95pct_ci_pp": [
+        -0.035,
+        1.729
+      ]
+    },
+    "eti_validation": {
+      "sequence_forest": {
+        "position_mae_pp": 23.246,
+        "mae_pp": 22.825,
+        "rmse_pp": 26.899,
+        "spearman": 0.447
+      },
+      "median": {
+        "position_mae_pp": 27.101
+      }
+    },
+    "esm2": {
+      "model": "facebook/esm2_t12_35M_UR50D",
+      "revision": "6fbf070e65b0b7291e7bbcd451118c216cff79d8",
+      "window_aa": 801,
+      "features": 480,
+      "development_variants_embedded": 478,
+      "cv_position_mae_pp": {
+        "esm_wt": 22.587,
+        "esm_mutant": 22.838,
+        "esm_delta": 23.714,
+        "esm_wt_delta": 22.881,
+        "esm_delta_sequence": 23.263
+      },
+      "validation_position_mae_pp": {
+        "esm_wt": 24.269,
+        "esm_mutant": 23.78,
+        "esm_delta": 25.17,
+        "esm_wt_delta": 23.13,
+        "esm_delta_sequence": 23.67
+      },
+      "cv_selected": "esm_wt",
+      "selected_validation_gain_over_forest_pp": -1.023,
+      "paired_gain_95pct_ci_pp": [
+        -3.953,
+        2.146
+      ],
+      "caution": "esm_wt_delta did best among ESM on validation, but was not CV-selected; do not select post hoc"
+    },
+    "vti_total_cv": {
+      "n_training_variants": 210,
+      "repeats": 2,
+      "folds": 5,
+      "position_mae_pp": {
+        "vti_forest": 17.871,
+        "pooled_forest": 18.214,
+        "median": 18.371,
+        "vti_ridge": 19.411,
+        "eti_zero_shot_forest": 22.15
+      },
+      "vti_forest_vs_median_gain_pp": 0.5,
+      "vti_forest_vs_median_gain_95pct_ci_pp": [
+        -0.721,
+        1.72
+      ]
+    },
+    "vti_validation": {
+      "vti_forest": {
+        "position_mae_pp": 15.238,
+        "mae_pp": 15.689,
+        "spearman": 0.20067874756444193
+      },
+      "median": {
+        "position_mae_pp": 14.89,
+        "mae_pp": 15.112
+      }
+    },
+    "vti_corrector_cv": {
+      "position_mae_pp": {
+        "vti_forest": 15.889,
+        "median": 15.922,
+        "pooled_forest": 16.286,
+        "vti_ridge": 17.445,
+        "eti_zero_shot_forest": 17.956
+      },
+      "forest_vs_median_gain_pp": 0.033,
+      "gain_95pct_ci_pp": [
+        -1.037,
+        1.116
+      ],
+      "pooled_vs_forest_gain_pp": -0.397,
+      "gain_95pct_ci_pooled_vs_forest": [
+        -1.358,
+        0.655
+      ]
+    }
+  },
+  "assay_comparability_training_overlap": {
+    "n_variants": 66,
+    "n_positions": 56,
+    "measurements": {
+      "baseline_fsk": {
+        "spearman": 0.793,
+        "cluster_ci": [
+          0.644,
+          0.889
+        ],
+        "median_paired_shift_pp": -0.863,
+        "median_absolute_shift_pp": 1.414
+      },
+      "dmso_fsk_iva": {
+        "spearman": 0.822,
+        "cluster_ci": [
+          0.685,
+          0.903
+        ],
+        "median_paired_shift_pp": -1.314,
+        "median_absolute_shift_pp": 1.897
+      },
+      "modulator_rescue": {
+        "spearman": 0.658,
+        "cluster_ci": [
+          0.482,
+          0.78
+        ],
+        "median_paired_shift_pp": 2.509,
+        "median_absolute_shift_pp": 6.668
+      },
+      "corrector_increment": {
+        "spearman": 0.624,
+        "cluster_ci": [
+          0.453,
+          0.745
+        ],
+        "median_paired_shift_pp": 1.933,
+        "median_absolute_shift_pp": 5.394
+      }
+    },
+    "caution": "Different study batches and drugs; not a clinical VTI versus ETI effect estimate."
+  },
+  "study_cohort_shift_training": {
+    "n": {
+      "ETI, VTI": 66,
+      "VTI": 144
+    },
+    "vti_rescue_median_pp": {
+      "ETI, VTI": 13.476,
+      "VTI": 39.555
+    },
+    "vti_forest_total_rescue": {
+      "ETI, VTI": {
+        "position_mae_pp": 20.436,
+        "prediction_bias_pp": 14.446,
+        "bias_95pct_ci_pp": [
+          9.98,
+          18.9
+        ]
+      },
+      "VTI": {
+        "position_mae_pp": 17.417,
+        "prediction_bias_pp": -5.161,
+        "bias_95pct_ci_pp": [
+          -9.29,
+          -1.52
+        ]
+      }
+    },
+    "pooled_forest_total_rescue": {
+      "ETI, VTI": {
+        "position_mae_pp": 22.373,
+        "prediction_bias_pp": 17.736
+      },
+      "VTI": {
+        "position_mae_pp": 17.032,
+        "prediction_bias_pp": -0.379
+      }
+    },
+    "vti_forest_corrector": {
+      "ETI, VTI": {
+        "position_mae_pp": 16.814,
+        "prediction_bias_pp": 12.623
+      },
+      "VTI": {
+        "position_mae_pp": 16.011,
+        "prediction_bias_pp": -4.651
+      }
+    },
+    "caution": "Cohorts selected under different criteria; differences are descriptive, not causal proof."
+  },
+  "reliability_training": {
+    "total_rescue": {
+      "model_disagreement_error_spearman": -0.07005684320285888,
+      "risk_coverage_position_mae_pp": {
+        "0.25": 19.943,
+        "0.50": 19.033,
+        "0.75": 17.064,
+        "1.00": 17.871
+      }
+    },
+    "corrector_increment": {
+      "model_disagreement_error_spearman": 0.01116110973319633,
+      "risk_coverage_position_mae_pp": {
+        "0.25": 18.135,
+        "0.50": 15.176,
+        "0.75": 14.718,
+        "1.00": 15.889
+      }
+    },
+    "conclusion": "Disagreement between VTI-only and pooled Forests did not yield a useful monotonic error-ranking signal in train-only CV."
+  },
+  "important_caveats": [
+    "Only exploratory CV/validation evidence exists; final ETI/VTI tests remain unopened.",
+    "Original 2024 validation outcomes informed exploratory model comparisons; not an independent model-selection resource.",
+    "2026 ETI-precharacterised cohort is enriched for poor/borderline ETI response.",
+    "McDonald reuse of Bihler measurements is NOT external replication.",
+    "Do not treat cohort labels, in-vitro baseline response, or future measurements as features in sequence-only prediction models.",
+    "Clinical VTD (with deutivacaftor) is not identical to experimentally assayed VTI (with ivacaftor).",
+    "Findings do not establish causality or clinical treatment recommendations.",
+    "No demonstrated advantage of frozen ESM-2, ETI zero-shot transfer, pooled ETI/VTI training, or model disagreement uncertainty."
+  ],
+  "next_decisions": [
+    "Freeze and check current source, splits, data hashes, experiments, and reproducibility without opening tests.",
+    "Characterise training-only selection shift with comparable sequence/structural/baseline activity strata, with caution about post-treatment feature access.",
+    "Evaluate train-only position-grouped calibration and alternative uncertainty scores; keep validation/test sealed for protocol finalisation.",
+    "Verify literature novelty and availability of independent publicly accessible patient-derived assays.",
+    "Pre-register final confirmatory model and use each frozen test set once."
+  ]
+}

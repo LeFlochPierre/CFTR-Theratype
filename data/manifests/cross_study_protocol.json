@@ -1,0 +1,13 @@
+{
+  "purpose": "Cross-study identifier mapping and frozen 2024 test protection",
+  "2024_pairs_sha256": "b4dc68e0b3c00511111db013acab7c6a64a3a986633fbc17cf409b617424bcf2",
+  "2024_split_sha256": "3d3ef0db840236a307f701de397fab07c49d25e63866978a1cc9795aca300d8a",
+  "2026_vti_sha256": "3570e093ff43bce95b7e42eaa2f8a37858d752907825a7f3dae75fb0078c32d2",
+  "n_vti_pairs": 415,
+  "n_exact_overlaps": 145,
+  "n_protected_by_2024_position": 62,
+  "n_transfer_development_candidates_before_vti_split": 295,
+  "2024_eti_outcomes_loaded": false,
+  "2026_vti_outcomes_loaded": false,
+  "note": "Position parsing is not 2026 WT sequence validation. Do not assume VTI and ETI response levels are batch-equivalent."
+}

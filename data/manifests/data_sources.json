@@ -15,6 +15,17 @@
       ]
     },
     {
+      "path": "data/raw/bihler_2026/mmc1.xlsx",
+      "sha256": "92c4fdea737ba6e4499b1cb7a4f62fe21b56330323fe899908b63d5abdd93b23",
+      "sheets": [
+        {
+          "name": "By name",
+          "raw_rows": 841,
+          "raw_columns": 26
+        }
+      ]
+    },
+    {
       "path": "data/raw/mcdonald_2024/table_s3.xlsx",
       "sha256": "28f721c1795b2516653c9f5383521697ed11b5fa851b75a68b4be1584c1ea269",
       "sheets": [
@@ -52,5 +63,14 @@
     "label_unit": "percentage points of wild-type CFTR function",
     "eti_rescue_definition": "ELX/TEZ-pretreated FSK+IVA %WT minus DMSO-pretreated FSK %WT",
     "warning": "In vitro FRT-cell response, not clinical treatment benefit. Unresolved duplicate conditions excluded without aggregation."
+  },
+  "bihler_2026_build": {
+    "source_sha256": "92c4fdea737ba6e4499b1cb7a4f62fe21b56330323fe899908b63d5abdd93b23",
+    "treatment": "VNZ+TEZ (24h) then acute IVA",
+    "primary_label": "vti_rescue_pp",
+    "label_formula": "(VNZ+TEZ pretreated FSK+IVA %WT) - (DMSO pretreated FSK %WT)",
+    "n_complete_pairs": 415,
+    "n_unresolved_identifiers": 1,
+    "note": "In-vitro FRT assay; not direct VTD clinical outcome. Study strata and response group retained as metadata only."
   }
 }
