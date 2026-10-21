@@ -200,7 +200,8 @@ def inspect():
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=["inspect", "build"])
+    parser.add_argument("command", choices=["inspect", "build", "split", "baseline", "cv", "embed"])
+    parser.add_argument("--smoke", action="store_true", help="Run a small embedding test")
     args = parser.parse_args()
 
     if args.command == "inspect":
@@ -208,6 +209,18 @@ def main():
     elif args.command == "build":
         from cftr_theratype.build import build
         build()
+    elif args.command == "split":
+        from cftr_theratype.splits import build_splits
+        build_splits()
+    elif args.command == "baseline":
+        from cftr_theratype.benchmark import run_baselines
+        run_baselines()
+    elif args.command == "cv":
+        from cftr_theratype.cv import run_cv
+        run_cv()
+    elif args.command == "embed":
+        from cftr_theratype.features.esm2 import extract_embeddings
+        extract_embeddings(smoke=args.smoke)
 
 
 if __name__ == "__main__":
