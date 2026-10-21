@@ -1,0 +1,29 @@
+{
+  "source": "data/processed/bihler_2024_theratyping.parquet",
+  "source_sha256": "b4dc68e0b3c00511111db013acab7c6a64a3a986633fbc17cf409b617424bcf2",
+  "seed": 42,
+  "strategy": "GroupShuffleSplit by canonical CFTR position",
+  "target": "eti_rescue_pp",
+  "protein_reference": "Bihler 2024 experimental WT, M470",
+  "reference_relative_to_uniprot": "P13569:p.Val470Met",
+  "assay_reference_fasta": "data/processed/bihler_2024_assay_reference.fasta",
+  "outer_test_position_fraction": 0.2,
+  "inner_validation_fraction_of_remaining_positions": 0.125,
+  "eligible_variant_type": "missense",
+  "n_eligible_variants": 586,
+  "n_distinct_positions": 427,
+  "counts": {
+    "train": {
+      "variants": 422,
+      "positions": 298
+    },
+    "val": {
+      "variants": 56,
+      "positions": 43
+    },
+    "test": {
+      "variants": 108,
+      "positions": 86
+    }
+  }
+}
