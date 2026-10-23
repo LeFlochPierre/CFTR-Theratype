@@ -1,0 +1,166 @@
+{
+  "checkpoint": "phase13_2026-10-23",
+  "provenance": "Numbers transcribed from RTX6 terminal output in chat; raw local experiment outputs frozen independently with checkpoint module; do not confuse with rerun or final-test evaluation",
+  "scope": "exploratory training-only cross-validated analyses; final test outcomes not accessed",
+  "test_splits_sealed": {
+    "eti_2024": {
+      "variants": 108,
+      "positions": 86
+    },
+    "vti_2026": {
+      "variants": 33,
+      "positions": 26
+    }
+  },
+  "training": {
+    "eti_2024": {
+      "variants": 422,
+      "positions": 298
+    },
+    "vti_2026": {
+      "variants": 210,
+      "positions": 168
+    },
+    "matched_overlap": {
+      "variants": 66,
+      "positions": 56
+    }
+  },
+  "unit": "percentage points of wild-type CFTR function",
+  "benchmarks": {
+    "eti_train_cv_forest_position_mae": 22.983,
+    "eti_train_cv_median_position_mae": 24.128,
+    "vti_original_transfer_cv_forest_position_mae": 17.871,
+    "vti_original_transfer_cv_pooled_position_mae": 18.214,
+    "vti_original_transfer_cv_eti_zero_shot_position_mae": 22.15,
+    "vti_matched_oof_forest_position_mae": 17.798
+  },
+  "source_of_baseline_difference": "17.871 is original transfer summary; 17.798 is matched repeated OOF analysis used in subsequent control/robustness/latent comparisons; do not interchange without reconciling aggregation",
+  "cohort_shift": {
+    "vti_rescue_medians": {
+      "ETI, VTI": 13.476,
+      "VTI": 39.555
+    },
+    "sequence_cohort_auc": 0.482,
+    "seq_classifier_bal_acc": 0.509,
+    "baseline_standardised_rescue_difference": -19.758,
+    "baseline_standardised_bias_gap": 18.97,
+    "cohort_oracle_mae": 15.902,
+    "measured_fsk_iva_ridge_oracle_mae": 16.129,
+    "matched_oof_forest_mae": 17.798
+  },
+  "cohort_balance": {
+    "vti_forest": {
+      "mae_all": 17.798,
+      "mae_prior_eti": 20.395,
+      "mae_vti_only": 17.323,
+      "bias_prior_eti": 14.446,
+      "bias_vti_only": -5.161
+    },
+    "balanced_forest_half": {
+      "mae_all": 17.629,
+      "mae_prior_eti": 19.375,
+      "mae_vti_only": 17.5,
+      "bias_prior_eti": 13.024,
+      "bias_vti_only": -6.452,
+      "gain_all_ci": [
+        -0.131,
+        0.454
+      ]
+    },
+    "balanced_forest_full": {
+      "mae_all": 17.748,
+      "mae_prior_eti": 18.562,
+      "mae_vti_only": 17.978,
+      "bias_prior_eti": 11.947,
+      "bias_vti_only": -7.668,
+      "gain_all_ci": [
+        -0.432,
+        0.511
+      ]
+    },
+    "full_balance_mean_prediction_shift": {
+      "prior_eti": -2.499,
+      "vti_only": -2.508
+    }
+  },
+  "latent": {
+    "architecture": {
+      "rank": 4,
+      "epochs": 260,
+      "input_feature_count": 68,
+      "fold_protocol": "2 repeats x 5 position-grouped folds",
+      "inference_features": "sequence/mutation only"
+    },
+    "models": {
+      "vti_forest": {
+        "all": 17.798,
+        "prior_eti": 20.395,
+        "vti_only": 17.323
+      },
+      "vti_latent": {
+        "all": 21.497,
+        "prior_eti": 23.649,
+        "vti_only": 20.622
+      },
+      "vti_anchored": {
+        "all": 21.384,
+        "prior_eti": 23.545,
+        "vti_only": 20.511
+      },
+      "shared_latent": {
+        "all": 21.097,
+        "prior_eti": 23.206,
+        "vti_only": 20.259
+      },
+      "anchored_latent": {
+        "all": 20.873,
+        "prior_eti": 22.949,
+        "vti_only": 20.068
+      }
+    },
+    "anchored_vs_forest_gain": -3.075,
+    "anchored_vs_forest_gain_bootstrap_95ci": [
+      -4.668,
+      -1.57
+    ],
+    "biology_joint_vs_joint_gain": 0.224,
+    "biology_joint_vs_joint_gain_95ci": [
+      0.119,
+      0.328
+    ],
+    "joint_anchored_vs_vti_anchored_gain": 0.511,
+    "joint_anchored_vs_vti_anchored_gain_95ci": [
+      0.292,
+      0.725
+    ],
+    "joint_unanchored_vs_vti_latent_gain": 0.4,
+    "joint_unanchored_vs_vti_latent_gain_95ci": [
+      0.233,
+      0.564
+    ],
+    "bias": {
+      "vti_forest": {
+        "prior_eti": 14.446,
+        "vti_only": -5.161
+      },
+      "anchored_latent": {
+        "prior_eti": 15.407,
+        "vti_only": -4.988
+      }
+    },
+    "auxiliary_predictions": {
+      "fsk_pos_mae": 14.762,
+      "fsk_iva_pos_mae": 18.343
+    }
+  },
+  "limitations": [
+    "Only training-only exploratory CV; neither test opened",
+    "2026 ETI pre-characterised variants response-selected",
+    "Two studies confound assay differences and drug differences",
+    "Retrospective cohort and measured assay features diagnostic only",
+    "Modest within-latent gains do not overturn negative comparison vs Forest",
+    "No claim about clinical outcomes or clinical VTD efficacy"
+  ],
+  "next_phase": "Biological feature coverage and target definition audit, then decision whether independent data or predefined model comparison is warranted"
+}
