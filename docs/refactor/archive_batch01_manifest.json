@@ -1,0 +1,106 @@
+{
+  "created_utc": "2026-11-01T22:44:16.900853+00:00",
+  "git_base": "714d4dbec08cd1ff1c327ffbac46c6db7d5936b4",
+  "moves": [
+    {
+      "from": "scripts/phase18e_direct_wt.py",
+      "to": "archive/legacy/scripts/phase18e_direct_wt.py",
+      "sha256": "a6539bdabef427db2b5dd0b54814b2ef79d84d2b5e73bd7a06d324ef25701adb"
+    },
+    {
+      "from": "scripts/phase19c_acute_cv.py",
+      "to": "archive/legacy/scripts/phase19c_acute_cv.py",
+      "sha256": "b5d3d9846b78811c09cbfdf64b42bdbdf3574654fb419c7ae00789f696054ae4"
+    },
+    {
+      "from": "scripts/phase19e_error_audit.py",
+      "to": "archive/legacy/scripts/phase19e_error_audit.py",
+      "sha256": "6b3f5b9b333adf68e41a95a6635b36518ce99d29a166ab93de3534339ecfbdb2"
+    },
+    {
+      "from": "scripts/phase19i_augmentation_ablation.py",
+      "to": "archive/legacy/scripts/phase19i_augmentation_ablation.py",
+      "sha256": "e07c39836bb578edecd5a82b9cb026305d2a22770aa5785f1fa42389b41728ba"
+    },
+    {
+      "from": "scripts/phase20_esm2_acute.py",
+      "to": "archive/legacy/scripts/phase20_esm2_acute.py",
+      "sha256": "c3b3cd706918b951e41688f3989de6313a193a08b57f5beacd988481039f7eaf"
+    },
+    {
+      "from": "scripts/phase21b_external_overlap_audit.py",
+      "to": "archive/legacy/scripts/phase21b_external_overlap_audit.py",
+      "sha256": "6965b0c65e7b26c90298d3d191a55267a28718029b1cc53cedc89eb8e64d15b3"
+    },
+    {
+      "from": "scripts/phase21c_external_biology_signal_audit.py",
+      "to": "archive/legacy/scripts/phase21c_external_biology_signal_audit.py",
+      "sha256": "5d9defebe58807eab7918f5f148b66f87434fe7c0a03a97a5a18bd3b61bbc1e0"
+    },
+    {
+      "from": "scripts/phase21d_crossfit_maturation_acute.py",
+      "to": "archive/legacy/scripts/phase21d_crossfit_maturation_acute.py",
+      "sha256": "87459afcd710990e497d49b88585c344dde2a719fa0efbc9f5501f6c7e1c4d8d"
+    },
+    {
+      "from": "scripts/phase21e_external_biology_transfer.py",
+      "to": "archive/legacy/scripts/phase21e_external_biology_transfer.py",
+      "sha256": "5a19c26afed856af3b8c5ff52a481ed7d6809b4301cf464df019b617310c50df"
+    },
+    {
+      "from": "scripts/phase22a_split_shift_stress_test.py",
+      "to": "archive/legacy/scripts/phase22a_split_shift_stress_test.py",
+      "sha256": "53b9368c6637fc416bff4d7e80131011b8c90526ed5f913f4f24842d85421413"
+    },
+    {
+      "from": "scripts/phase22b_high_responder_detection.py",
+      "to": "archive/legacy/scripts/phase22b_high_responder_detection.py",
+      "sha256": "15d5d2d3dc35e648eca2fd3e514d4f6197c2185a44dda6b85bb31025701844af"
+    },
+    {
+      "from": "scripts/phase23a_eti_functional_overlap_audit.py",
+      "to": "archive/legacy/scripts/phase23a_eti_functional_overlap_audit.py",
+      "sha256": "87e94059a94d57b63284bb4224c9db25f76b0570ff2fab98127ffa797ca7cfca"
+    },
+    {
+      "from": "scripts/phase23c_assay_conditioned_transfer.py",
+      "to": "archive/legacy/scripts/phase23c_assay_conditioned_transfer.py",
+      "sha256": "adb6a952230bbed2991d62cc63c9859978feb5165ee5abf020a6f352b2a6d264"
+    },
+    {
+      "from": "scripts/phase23d_eti_teacher_acute.py",
+      "to": "archive/legacy/scripts/phase23d_eti_teacher_acute.py",
+      "sha256": "1c22e8bc8731c89b3c2f7e8824526007e7c5b820d6b7dfb6635fdeb9f5f277b6"
+    },
+    {
+      "from": "scripts/phase23e_ranking_robustness.py",
+      "to": "archive/legacy/scripts/phase23e_ranking_robustness.py",
+      "sha256": "4b2b6733dc3685c1ce1cc952d5a9255fba15dcbe33b2191d60bf1c2489482c50"
+    },
+    {
+      "from": "scripts/phase24a_total_vti_rescue_audit.py",
+      "to": "archive/legacy/scripts/phase24a_total_vti_rescue_audit.py",
+      "sha256": "25b91579d9983dea0b13aa06bdbeee809349189fa34df4a3cf7f94e5ed335783"
+    },
+    {
+      "from": "scripts/phase24b_conditional_total_rescue.py",
+      "to": "archive/legacy/scripts/phase24b_conditional_total_rescue.py",
+      "sha256": "b440153aa5fb509f0fff5bd2a9c03a770dac6351b9ffbb71213fbd0d06b1ccac"
+    },
+    {
+      "from": "scripts/phase24e_uncertainty_audit.py",
+      "to": "archive/legacy/scripts/phase24e_uncertainty_audit.py",
+      "sha256": "6981d085f2cc8413e2b8af4e70c9d1a94d13a57573479d4c87d2868665ece351"
+    },
+    {
+      "from": "scripts/phase24f_discordance_triage.py",
+      "to": "archive/legacy/scripts/phase24f_discordance_triage.py",
+      "sha256": "3c879b9fbe253394b2cea4b788d947cd8a8c1c7bd1a9633cae1f10a31e63386b"
+    },
+    {
+      "from": "scripts/phase25a_mechanism_guided_transfer.py",
+      "to": "archive/legacy/scripts/phase25a_mechanism_guided_transfer.py",
+      "sha256": "1fb81e0161bc63f881ae73a9e165a443ddf0b12627323097b2efb64953835275"
+    }
+  ]
+}
