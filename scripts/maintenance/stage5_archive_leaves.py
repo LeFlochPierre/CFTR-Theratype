@@ -23,8 +23,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 SOURCE_EXT = {'.py', '.sh', '.bash', '.yaml', '.yml', '.toml', '.ini', '.cfg'}
-SCAN_DIRS = ('scripts', 'src', 'tests', 'tools', 'configs')
+SCAN_DIRS = ('scripts', 'archive/legacy/scripts', 'src', 'tests', 'tools', 'configs')
 PROTECTED = {
+    'phase26n_locked_validation',
+    'phase26o_final_test',
+    'phase27f_locked_validation',
     'phase26d_corrector_bottleneck',
     'phase26g_feature_model_ablation',
     'phase26h_auxiliary_corrector',
