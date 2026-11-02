@@ -20,6 +20,10 @@ dependencies = [
 
 [project.scripts]
 cftr-data = "cftr_theratype.data:main"
+cftr = "cftr_theratype.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[project.optional-dependencies]
+modeling = ["xgboost>=1.7"]
