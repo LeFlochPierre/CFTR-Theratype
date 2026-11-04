@@ -23,8 +23,8 @@ from sklearn.metrics import roc_auc_score, average_precision_score, brier_score_
 
 ROOT = Path.cwd()
 sys.path.insert(0, str(ROOT / 'scripts'))
-import phase26d_corrector_bottleneck as p26d
-import phase26g_feature_model_ablation as p26g
+from cftr_theratype.datasets.frozen_vti import load_train as load_vti_train
+from cftr_theratype.models.regressors import phase26g_model, PHASE26G_PARAMS
 import phase31i2_repository as p31i
 import phase31i_auxiliary_transfer as aux
 
@@ -34,7 +34,7 @@ MODEL_SELECTION = ROOT / 'results/biology/phase26g'
 
 
 def get_data():
-    d, feat, _, folds, source = p26d.load_train()
+    d, feat, _, folds, source = load_vti_train(ROOT)
     X = np.asarray(feat['sequence_structure'], dtype=float)
     if len(d) != 210 or d.protein_position.nunique() != 168 or X.shape != (210, 80):
         raise AssertionError('Unexpected frozen VTI TRAIN or feature representation')
@@ -109,7 +109,7 @@ def chosen_specs(target):
     spec = {}
     for row in z.itertuples(index=False):
         p = ast.literal_eval(str(row.selected_param))
-        if p not in p26g.PARAMS['xgb']:
+        if p not in PHASE26G_PARAMS['xgb']:
             raise ValueError('Unexpected historical XGB spec')
         spec[int(row.repeat),int(row.fold)] = p
     if len(spec)!=10: raise AssertionError('Expected 10 frozen XGB specifications')
@@ -238,7 +238,7 @@ def esm_eval(args):
             scalar.fit(xscore[it,None],y[it])
             add(rows,d,t,'esmrank_only_ridge',rep,fold,iv,scalar.predict(xscore[iv,None]))
             matrix=np.column_stack((X,xscore))
-            est=p26g.make_model('xgb',specs[t][int(rep),int(fold)])
+            est=phase26g_model('xgb',specs[t][int(rep),int(fold)])
             est.fit(matrix[it],y[it])
             add(rows,d,t,'esmrank_plus_xgb80',rep,fold,iv,est.predict(matrix[iv]))
         print(f'ESM outer {fi}/{1 if args.quick else len(folds)} complete',flush=True)
@@ -304,7 +304,7 @@ def targets(args):
             spec=specs[t][int(rep),int(fold)]
             preds={}
             for field in [base_col,treated_col]:
-                model=p26g.make_model('xgb',spec)
+                model=phase26g_model('xgb',spec)
                 model.fit(X[it],d[field].to_numpy(float)[it])
                 preds[field]=model.predict(X[iv])
             pred=preds[treated_col]-preds[base_col]

@@ -49,134 +49,20 @@ PARAMS = {
 
 
 def make_model(kind, params, topk=None):
-    steps = []
-
-    # Imputation is fitted only on training positions.
-    # XGBoost handles NaNs directly when no selection is used.
-    if kind != "xgb" or topk is not None:
-        steps.append(
-            ("imputer", SimpleImputer(strategy="median"))
-        )
-
-    if kind in ("ridge", "elastic"):
-        steps.append(("scale", StandardScaler()))
-
-    if topk is not None:
-        steps.append(
-            ("select", SelectKBest(f_regression, k=topk))
-        )
-
-    if kind == "ridge":
-        estimator = Ridge(alpha=params)
-
-    elif kind == "elastic":
-        estimator = ElasticNet(
-            alpha=params,
-            l1_ratio=0.5,
-            max_iter=12000,
-            random_state=2607,
-        )
-
-    elif kind == "trees":
-        estimator = ExtraTreesRegressor(
-            n_estimators=250,
-            min_samples_leaf=params,
-            max_features=0.8,
-            n_jobs=3,
-            random_state=2607,
-        )
-
-    elif kind == "xgb":
-        depth, lam, trees = params
-        estimator = XGBRegressor(
-            n_estimators=trees,
-            max_depth=depth,
-            learning_rate=0.05,
-            subsample=0.90,
-            colsample_bytree=0.90,
-            min_child_weight=3,
-            reg_lambda=lam,
-            objective="reg:squarederror",
-            tree_method="hist",
-            n_jobs=3,
-            random_state=26,
-        )
-    else:
-        raise ValueError(kind)
-
-    steps.append(("regression", estimator))
-    return Pipeline(steps)
-
+    from cftr_theratype.models.regressors import phase26g_model
+    return phase26g_model(kind, params, topk)
 
 def position_mae(y, pred, groups):
-    d = pd.DataFrame({
-        "position": groups,
-        "error": np.abs(y - pred),
-    })
-    return float(d.groupby("position").error.mean().mean())
-
+    from cftr_theratype.evaluation.metrics import position_mae as shared
+    return shared(y, pred, groups)
 
 def choose(x, y, groups, kind, topk, fast=False):
-    best = None
-    grid = PARAMS[kind][:1] if fast else PARAMS[kind]
-
-    for params in grid:
-        oof = np.full(len(y), np.nan)
-
-        for tr, te in GroupKFold(3).split(x, y, groups):
-            model = make_model(kind, params, topk)
-
-            with warnings.catch_warnings():
-                warnings.filterwarnings(
-                    "ignore",
-                    category=UserWarning,
-                    message="Features .* are constant",
-                )
-                model.fit(x[tr], y[tr])
-
-            oof[te] = model.predict(x[te])
-
-        score = position_mae(y, oof, groups)
-
-        if best is None or score < best[0] - 1e-12:
-            best = (score, params)
-
-    return best[1], best[0]
-
+    from cftr_theratype.models.regressors import phase26g_choose
+    return phase26g_choose(x, y, groups, kind, topk, fast)
 
 def paired_ci(d, candidate, baseline, n=5000):
-    q = d.copy()
-
-    q["gain"] = (
-        np.abs(q.observed - q[baseline])
-        - np.abs(q.observed - q[candidate])
-    )
-
-    values = (
-        q.groupby(["repeat", "protein_position"])
-        .gain.mean()
-        .groupby("protein_position")
-        .mean()
-        .to_numpy()
-    )
-
-    rng = np.random.default_rng(2607)
-
-    sims = rng.choice(
-        values,
-        size=(n, len(values)),
-        replace=True,
-    ).mean(axis=1)
-
-    return {
-        "model": candidate,
-        "reference": baseline,
-        "gain_pp": float(values.mean()),
-        "ci95_low": float(np.quantile(sims, 0.025)),
-        "ci95_high": float(np.quantile(sims, 0.975)),
-        "n_positions": len(values),
-    }
-
+    from cftr_theratype.evaluation.metrics import paired_ci as shared
+    return shared(d, candidate, baseline, n=n)
 
 def main():
     ap = argparse.ArgumentParser()

@@ -31,133 +31,24 @@ GRID = [(2, 5.0, 180), (3, 8.0, 250)]  # small, declared before observing result
 
 
 def pos_mae(y, pred, group):
-    return float(pd.DataFrame({'g':group,'e':np.abs(y-pred)}).groupby('g').e.mean().mean())
-
+    from cftr_theratype.evaluation.metrics import position_mae
+    return position_mae(y, pred, group)
 
 def model(spec, seed=26):
-    depth, regularisation, trees = spec
-    return XGBRegressor(
-        n_estimators=trees, max_depth=depth, learning_rate=.05,
-        subsample=.90, colsample_bytree=.90, min_child_weight=3,
-        reg_lambda=regularisation, objective='reg:squarederror',
-        tree_method='hist', n_jobs=3, random_state=seed,
-    )
-
+    from cftr_theratype.models.regressors import phase26d_model
+    return phase26d_model(spec, seed=seed)
 
 def select_spec(X, y, group, quick=False):
-    specs = GRID[:1] if quick else GRID
-    if len(specs) == 1:
-        return specs[0], float('nan')
-    cv = GroupKFold(n_splits=3)
-    scores=[]
-    for spec in specs:
-        preds=np.full(len(y),np.nan)
-        for it,iv in cv.split(X,y,group):
-            est=model(spec)
-            est.fit(X[it],y[it])
-            preds[iv]=est.predict(X[iv])
-        scores.append(pos_mae(y,preds,group))
-    ix=int(np.argmin(scores))
-    return specs[ix], scores[ix]
-
+    from cftr_theratype.models.regressors import phase26d_select_spec
+    return phase26d_select_spec(X, y, group, quick=quick)
 
 def folds_from_historical_oof(oof, expected_keys, position_by_key):
-    """Use held-out variant membership, NOT predicted or observed labels."""
-    required={'repeat','fold','model','variant_key','protein_position'}
-    missing=required-set(oof.columns)
-    if missing:
-        raise ValueError(f'Historical OOF missing {missing}; refusing to invent comparable folds')
-    reference=None
-    keys=set(expected_keys)
-    for name in sorted(oof['model'].dropna().astype(str).unique()):
-        t=oof.loc[oof.model.astype(str).eq(name)].copy()
-        good=True
-        for repeat,g in t.groupby('repeat',dropna=False):
-            if set(g.variant_key)!=keys or g.variant_key.duplicated().any():
-                good=False;break
-            pg=g.groupby('protein_position').fold.nunique()
-            if (pg>1).any():
-                good=False;break
-        if good and len(t):
-            reference=name;break
-    if reference is None:
-        raise ValueError('No historical model has one held-out OOF row per variant per repeat')
-    selected=oof.loc[oof.model.astype(str).eq(reference)].copy()
-    splits=[]
-    for (repeat,fold), t in selected.groupby(['repeat','fold'],sort=True):
-        test=set(t.variant_key)
-        test_positions=set(t.protein_position)
-        train=keys-test
-        train_positions={position_by_key[k] for k in train}
-        assert test_positions.isdisjoint(train_positions), 'LEAKAGE: protein position crosses train/test'
-        assert len(test_positions)>0 and len(train_positions)>0
-        splits.append((repeat,fold,train,test))
-    print(f'Frozen OOF source: {reference}; repeats={selected.repeat.nunique()}; outer folds={len(splits)}')
-    return splits,reference
-
+    from cftr_theratype.evaluation.folds import from_historical_oof
+    return from_historical_oof(oof, expected_keys, position_by_key)
 
 def load_train():
-    import sys
-    sys.path.insert(0,str(ROOT/'src'))
-    from cftr_theratype import model_zoo
-    base, features, historical, _ = model_zoo.prepare(ROOT)
-    base=base.copy()
-    assert len(base)==210 and base.variant_key.is_unique
-    assert base.protein_position.nunique()==168
-    assert base.transfer_split.eq('train').all()
-    assert set(('sequence','sequence_structure')).issubset(features)
-    for key in ('sequence','sequence_structure'):
-        X = np.asarray(features[key], dtype=float)
-
-        if X.ndim != 2 or X.shape[0] != len(base):
-            raise ValueError(
-                f'{key}: unexpected shape {X.shape}'
-            )
-
-        n_nan = int(np.isnan(X).sum())
-        n_inf = int(np.isinf(X).sum())
-        bad_cols = np.flatnonzero(
-            ~np.isfinite(X).all(axis=0)
-        ).tolist()
-
-        print(
-            f'Feature QC {key}: shape={X.shape}, '
-            f'NaN={n_nan}, Inf={n_inf}, '
-            f'nonfinite_columns={bad_cols}'
-        )
-
-        if n_inf:
-            X = X.copy()
-            X[np.isinf(X)] = np.nan
-            print(
-                f'WARNING: converted {n_inf} infinities '
-                f'to missing values in {key}'
-            )
-
-        features[key] = X
-
-    # Parquet predicate pushdown: protected VTI outcomes never enter the dataframe.
-    allowed=base.variant_key.astype(str).tolist()
-    cols=['variant_key','baseline_fsk_pct_wt','iva_treated_pct_wt',
-          'vnz_tez_fsk_pct_wt','vti_treated_pct_wt','vti_rescue_pp',
-          'corrector_rescue_pp']
-    assay=pd.read_parquet(ROOT/'data/processed/bihler_2026_vti.parquet',
-                          columns=cols, filters=[('variant_key','in',allowed)])
-    assert assay.variant_key.is_unique and set(assay.variant_key)==set(allowed)
-    d=base.merge(assay,on='variant_key',how='left',validate='one_to_one',suffixes=('','_assay'))
-    assert len(d)==210
-    for col in cols[1:]:
-        d[col]=pd.to_numeric(d[col],errors='raise')
-        assert np.isfinite(d[col]).all(),col
-    assert np.allclose(d.vti_rescue_pp,d.vti_treated_pct_wt-d.baseline_fsk_pct_wt,atol=1e-6)
-    assert np.allclose(d.corrector_rescue_pp,d.vnz_tez_fsk_pct_wt-d.baseline_fsk_pct_wt,atol=1e-6)
-    assert np.allclose(d.vti_rescue_pp,base.vti_rescue_pp,atol=1e-6)
-    d['vti_acute_after_corrector_pp']=d.vti_treated_pct_wt-d.vnz_tez_fsk_pct_wt
-    assert np.allclose(d.vti_rescue_pp,d.corrector_rescue_pp+d.vti_acute_after_corrector_pp,atol=1e-6)
-    position_by_key=dict(zip(d.variant_key,d.protein_position))
-    splits,ref=folds_from_historical_oof(historical,set(allowed),position_by_key)
-    return d,features,historical,splits,ref
-
+    from cftr_theratype.datasets.frozen_vti import load_train as canonical_load_train
+    return canonical_load_train(ROOT)
 
 def evaluate(d,features,splits,quick=False):
     n=len(d)
