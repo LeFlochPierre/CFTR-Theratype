@@ -12,7 +12,6 @@ any deployable model result. No VTI VAL / TEST outcome is read.
 from __future__ import annotations
 
 import argparse
-import sys
 from pathlib import Path
 
 import numpy as np
@@ -23,7 +22,6 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import confusion_matrix
 
 ROOT = Path.cwd()
-sys.path.insert(0, str(ROOT / "scripts"))
 OUT = ROOT / "results/biology/phase27e"
 REF = ROOT / "results/biology/phase27d/phase27d4b_regression_oof.csv"
 GATES = ROOT / "results/biology/phase27b/phase27b3_repeated_oof.csv"
