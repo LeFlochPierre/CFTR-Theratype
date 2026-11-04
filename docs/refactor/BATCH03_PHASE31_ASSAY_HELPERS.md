@@ -40,7 +40,7 @@ PYTHONPATH="$PWD/src" python -m pytest -q \
     tests/test_stage2_core_parity.py \
     tests/test_stage3_legacy_parity.py
 
-git diff --check
+git diff --check origin/main...HEAD
 ```
 
 The standalone `scripts/test_phase31i2_repository.py`,
