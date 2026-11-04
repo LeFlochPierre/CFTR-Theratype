@@ -74,7 +74,19 @@ def test_classifiers_match_original_wrappers_and_prespecified_estimators():
     for name in ("logistic_seq68", "xgb_seq80"):
         orig = b1.make_model(name, y, 27001)
         canon = make_model(name, y, 27001)
-        assert orig.get_params() == canon.get_params()
+        assert type(orig) is type(canon)
+        if name == "logistic_seq68":
+            # Pipeline.get_params() includes step *objects*: separately
+            # constructed estimators compare unequal by identity.
+            assert list(orig.named_steps) == list(canon.named_steps)
+            for step in orig.named_steps:
+                left = orig.named_steps[step]
+                right = canon.named_steps[step]
+                assert type(left) is type(right)
+                assert left.get_params(deep=True) == right.get_params(deep=True)
+            assert orig.get_params(deep=False)["memory"] == canon.get_params(deep=False)["memory"]
+        else:
+            assert orig.get_params(deep=True) == canon.get_params(deep=True)
         if name == "xgb_seq80":
             assert canon.n_estimators == 140
             assert canon.max_depth == 2

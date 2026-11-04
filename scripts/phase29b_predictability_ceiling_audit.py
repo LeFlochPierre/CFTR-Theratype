@@ -26,7 +26,6 @@ from sklearn.linear_model import Ridge
 from sklearn.preprocessing import StandardScaler
 
 ROOT=Path.cwd()
-sys.path.insert(0,str(ROOT/'scripts'))
 FROZEN=ROOT/'results/biology/phase26h2/phase26h2_oof.csv'
 OUT=ROOT/'results/biology/phase29b'
 KEY=['repeat','fold','variant_key','protein_position']
@@ -244,7 +243,7 @@ def inspect_nearest(oof, n_top):
 
 def run(args):
     from cftr_theratype.datasets.eti_auxiliary import load_data as load_eti_train
-    from phase27d1_biology_ablation import extract_codes
+    from cftr_theratype.features.mutation_codes import extract_codes
     v,x80,_,_,folds=load_eti_train(ROOT)
     x80=np.asarray(x80,float)
     keys=v.variant_key.astype(str).to_numpy()

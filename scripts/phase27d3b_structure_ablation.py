@@ -18,7 +18,6 @@ import pandas as pd
 from sklearn.metrics import average_precision_score, roc_auc_score
 
 ROOT = Path.cwd()
-sys.path.insert(0, str(ROOT / 'scripts'))
 
 OUT = ROOT / 'results/biology/phase27d'
 GEO = OUT / 'phase27d3_3d_distances_by_position.csv'
@@ -198,8 +197,12 @@ def self_test():
 
 def run(n_decoys, nboot):
     from cftr_theratype.datasets.eti_auxiliary import load_data as load_eti_train
-    import phase27b1_extreme_classifiers as b
-    import phase27d1_biology_ablation as d1
+    from cftr_theratype.models.responder_classifiers import make_model
+    from cftr_theratype.evaluation.responder_classification import ap_gain_bootstrap
+    from cftr_theratype.features.mutation_codes import extract_codes
+    from cftr_theratype.features.biology_annotations import (
+        annotation_features, DOMAINS,
+    )
 
     verify_provenance()
     geometry = load_geometry()
@@ -214,8 +217,8 @@ def run(n_decoys, nboot):
         raise ValueError('Unexpected VTI TRAIN or frozen folds')
     if not np.isfinite(x80[:, :68]).all():
         raise ValueError('Nonfinite sequence descriptors')
-    code = d1.extract_codes(v, pp)
-    annotation = d1.annotation_features(pp, code)
+    code = extract_codes(v, pp)
+    annotation = annotation_features(pp, code)
     feat, cover = feature_sets(geometry, pp,
                                annotation['pocket_proxy'].to_numpy(float),
                                annotation['chemistry'].to_numpy(float))
@@ -229,7 +232,7 @@ def run(n_decoys, nboot):
     # True coordinates and decoys are independent of response labels.
     rng = np.random.default_rng(273003)
     controls = {f'decoy_{k+1:03d}': region_matched_decoy(
-        feat['3d_heavy'], pp, d1.DOMAINS, rng) for k in range(n_decoys)}
+        feat['3d_heavy'], pp, DOMAINS, rng) for k in range(n_decoys)}
     tasks = [
         ('corrector_high', (yy > 40).astype(int), x80[:, :68], 'logistic_seq68',
          ['3d_heavy', '3d_ca', '3d_contacts', 'seq_plus_3d'], controls),
@@ -278,7 +281,7 @@ def run(n_decoys, nboot):
                 XX = np.column_stack([base, f])
                 if task == 'corrector_high' and not np.isfinite(XX).all():
                     raise ValueError('Nonfinite logistic input features')
-                mdl = b.make_model(method, labels[tr],
+                mdl = make_model(method, labels[tr],
                                    27000 + (100 if task == 'corrector_high' else 0) + fold_id)
                 mdl.fit(XX[tr], labels[tr])
                 score = mdl.predict_proba(XX[te])[:, 1]
@@ -324,7 +327,7 @@ def run(n_decoys, nboot):
         for j,(candidate, reference) in enumerate(comparisons):
             if candidate not in wide.columns:
                 raise ValueError(f'Missing candidate {candidate}')
-            res = b.ap_gain_bootstrap(wide, reference, candidate, nboot,
+            res = ap_gain_bootstrap(wide, reference, candidate, nboot,
                                        seed=273600 + (100 if task=='corrector_high' else 0) + j)
             contrasts.append({'task':task, **res})
     gains = pd.DataFrame(contrasts)

@@ -65,3 +65,19 @@ def position_from_code(code):
         r"[A-Z]([0-9]{1,4})[A-Z]", code
     )
     return int(m.group(1)) if m else np.nan
+
+
+def extract_codes(frame, pp):
+    candidates = [c for c in ('mutation', 'hgvs_protein', 'protein_change',
+                              'variant_key') if c in frame.columns]
+    for column in candidates:
+        codes = [mutation_code(str(x)) for x in frame[column].astype(str)]
+        good = [bool(re.fullmatch(r'[A-Z]\d+[A-Z]', str(x))) for x in codes]
+        if all(good):
+            parsed_pp = [int(re.search(r'\d+', x).group()) for x in codes]
+            if np.array_equal(parsed_pp, pp):
+                print('Mutation-code source:', column)
+                return codes
+    raise ValueError('Could not parse all missense protein substitutions. '
+                     f'Available columns: {list(frame.columns)}. '
+                     'Inspect the original VTI TRAIN fields; do not guess amino acids.')

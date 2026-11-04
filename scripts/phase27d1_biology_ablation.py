@@ -22,40 +22,12 @@ ROOT = Path.cwd()
 OUT = ROOT / 'results/biology/phase27d'
 PRIOR = ROOT / 'results/biology/phase27b/phase27b1_repeated_oof.csv'
 
-# UniProt P13569: https://www.uniprot.org/uniprotkb/P13569/entry
-DOMAINS = {
-    'uniprot_TMD1': (81, 365),
-    'uniprot_NBD1_core': (423, 646),
-    'uniprot_R_region': (654, 831),
-    'uniprot_TMD2': (859, 1155),
-    'uniprot_NBD2_core': (1210, 1443),
-}
-TM_HELICES = [
-    (78, 98), (123, 146), (196, 216), (223, 243),
-    (299, 319), (340, 358), (859, 879), (919, 939),
-    (991, 1011), (1014, 1034), (1096, 1116), (1131, 1151),
-]
-# Published tezacaftor/lumacaftor TMD1 site and elexacaftor contacts.
-# These are SEQUENCE-DISTANCE PROXIES, not structural Euclidean distances.
-CONTACT_SETS = {
-    'typeI_corrector_seq': [68, 74, 195, 198, 364],
-    'VX445_corrector_seq': [18, 21, 1098, 1102],
-}
-
-# Standard simple residue descriptors. No new experimental labels.
-HYDROPATHY = dict(zip(
-    'ACDEFGHIKLMNPQRSTVWY',
-    [1.8, 2.5, -3.5, -3.5, 2.8, -0.4, -3.2, 4.5, -3.9, 3.8,
-     1.9, -3.5, -1.6, -3.5, -4.5, -0.8, -0.7, 4.2, -0.9, -1.3]
-))
-CHARGE = {aa: (1 if aa in 'KR' else -1 if aa in 'DE' else 0)
-          for aa in HYDROPATHY}
-VOLUME = dict(zip(
-    'ACDEFGHIKLMNPQRSTVWY',
-    [88.6, 108.5, 111.1, 138.4, 189.9, 60.1, 153.2, 166.7,
-     168.6, 166.7, 162.9, 114.1, 112.7, 143.8, 173.4, 89.0,
-     116.1, 140.0, 227.8, 193.6]
-))
+# Canonical fixed biological intervals and residue descriptors.
+# Preserve these names for historic experiment commands and self-tests.
+from cftr_theratype.features.biology_annotations import (
+    DOMAINS, TM_HELICES, CONTACT_SETS,
+    HYDROPATHY, CHARGE, VOLUME,
+)
 
 
 def annotation_features(positions, codes):
@@ -63,20 +35,9 @@ def annotation_features(positions, codes):
     return shared(positions, codes)
 
 def extract_codes(frame, pp):
-    from cftr_theratype.features.mutation_codes import mutation_code
-    candidates = [c for c in ('mutation', 'hgvs_protein', 'protein_change',
-                              'variant_key') if c in frame.columns]
-    for column in candidates:
-        codes = [mutation_code(str(x)) for x in frame[column].astype(str)]
-        good = [bool(re.fullmatch(r'[A-Z]\d+[A-Z]', str(x))) for x in codes]
-        if all(good):
-            parsed_pp = [int(re.search(r'\d+', x).group()) for x in codes]
-            if np.array_equal(parsed_pp, pp):
-                print('Mutation-code source:', column)
-                return codes
-    raise ValueError('Could not parse all missense protein substitutions. '
-                     f'Available columns: {list(frame.columns)}. '
-                     'Inspect the original VTI TRAIN fields; do not guess amino acids.')
+    """Legacy API: shared strict metadata/position source selection."""
+    from cftr_theratype.features.mutation_codes import extract_codes as shared
+    return shared(frame, pp)
 
 
 def evaluation(y, scores):
