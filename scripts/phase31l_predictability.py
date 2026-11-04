@@ -17,7 +17,8 @@ sys.path.insert(0, str(Path.cwd() / "scripts"))
 
 import phase26d_corrector_bottleneck as p26d
 import phase26g_feature_model_ablation as p26g
-import phase31j_error_diagnostics as p31j
+from cftr_theratype.features.regions import domains_from_file, domain_of
+from cftr_theratype.evaluation.historical_oof import load_m0
 
 OUT = Path("results/biology/phase31l")
 
@@ -44,7 +45,7 @@ def score(y, pred, pos):
 
 def source():
     d, matrices, _, folds, ref = p26d.load_train()
-    oof, _ = p31j.load_m0(d)
+    oof, _ = load_m0(d, root=Path.cwd())
 
     X = np.asarray(matrices["sequence_structure"], float)
 
@@ -151,9 +152,9 @@ def inspect(d, X, oof):
     features = []
     domains = []
 
-    regions = p31j.domains_from_file(None)
+    regions = domains_from_file(None)
     annotations = np.array([
-        p31j.domain_of(p, regions) for p in pos
+        domain_of(p, regions) for p in pos
     ])
 
     for target, col in TARGET.items():
