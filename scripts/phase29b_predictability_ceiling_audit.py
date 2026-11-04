@@ -243,9 +243,9 @@ def inspect_nearest(oof, n_top):
 
 
 def run(args):
-    import phase26h_auxiliary_corrector as h
+    from cftr_theratype.datasets.eti_auxiliary import load_data as load_eti_train
     from phase27d1_biology_ablation import extract_codes
-    v,x80,_,_,folds=h.load_data()
+    v,x80,_,_,folds=load_eti_train(ROOT)
     x80=np.asarray(x80,float)
     keys=v.variant_key.astype(str).to_numpy()
     pos=v.protein_position.to_numpy(int)
