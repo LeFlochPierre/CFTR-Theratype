@@ -61,9 +61,7 @@ PYTHONPATH="$PWD/src" python -m pytest -q \
   tests/test_phase27d3a_provenance_batch12.py \
   tests/test_phase29a_capacity_batch11.py
 
-PYTHONPATH="$PWD/src" python -c \
-'\''import sys; sys.path.insert(0, "scripts"); \
-import phase26k2_numeric_audit as k2; k2.self_test()'\''
+PYTHONPATH="$PWD/src" python -c "import sys; sys.path.insert(0, 'scripts'); import phase26k2_numeric_audit as k2; k2.self_test()"
 PYTHONPATH="$PWD/src" python scripts/phase27e1_mixture_of_experts.py --self-test
 
 PYTHONPATH="$PWD/src" python -m pytest -q -rs tests/
