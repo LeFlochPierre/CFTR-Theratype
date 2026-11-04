@@ -82,8 +82,8 @@ def test_phase31j_no_longer_imports_numbered_scripts_for_pure_helpers():
     assert "cftr_theratype.datasets.assay_identifiers" in modules
     assert "cftr_theratype.features.assay_substitutions" in modules
     assert "cftr_theratype.models.assay_teachers" in modules
-    # The legacy teacher *workflow* still imports Phase31I metadata/root helpers.
-    # Only the reusable pure-helper imports are migrated in this batch.
+    # Phase31J's full teacher workflow now uses package-level dataset loaders.
+    # Keep this earlier pure-helper import contract for regression coverage.
     forbidden = {("phase31i_auxiliary_transfer", "with_ids"),
                  ("phase31i2_repository", "mutation_features"),
                  ("phase31i2_repository", "make_teacher")}
