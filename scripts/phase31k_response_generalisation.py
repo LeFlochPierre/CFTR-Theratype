@@ -27,7 +27,6 @@ from scipy.stats import spearmanr
 from sklearn.model_selection import GroupKFold
 
 ROOT = Path.cwd()
-sys.path.insert(0, str(ROOT / 'scripts'))
 OUT = ROOT / 'results/biology/phase31k'
 ALPHAS = (0.0, 0.75, 1.5)  # predeclared BEFORE looking at Phase31K results
 MODELS = ('M0', 'T1_mild', 'T2_strong', 'T3_inner_selected')
@@ -38,12 +37,12 @@ def sha256(path):
 
 
 def source_data():
-    import phase26d_corrector_bottleneck as prior
-    import phase31j_error_diagnostics as phase31j
-    d, features, _, folds, frozen_source = prior.load_train()
+    from cftr_theratype.datasets import frozen_vti
+    from cftr_theratype.evaluation import historical_oof
+    d, features, _, folds, frozen_source = frozen_vti.load_train(ROOT)
     if len(d) != 210 or d.protein_position.nunique() != 168 or not d.transfer_split.eq('train').all():
         raise AssertionError('Frozen 210-variant / 168-position TRAIN contract failed')
-    oof, checks = phase31j.load_m0(d)  # validates Phase26G <-> Phase31I baseline parity
+    oof, checks = historical_oof.load_m0(d, root=ROOT)  # validates Phase26G <-> Phase31I baseline parity
     keys = d.variant_key.astype(str).to_numpy()
     pos = d.protein_position.to_numpy(int)
     index = {(int(r), int(f)): (set(tr), set(te)) for r, f, tr, te in folds}
@@ -243,8 +242,8 @@ def tail_weights(y, pos, alpha):
 
 
 def fit_weighted(kind, spec, x, y, pos, alpha):
-    import phase26g_feature_model_ablation as p26g
-    est = p26g.make_model('xgb', spec)
+    from cftr_theratype.models import regressors
+    est = regressors.phase26g_model('xgb', spec)
     if float(alpha) == 0.0:
         est.fit(x, y)  # exact Phase26G parity; do NOT pass all-ones sample_weight
     else:
@@ -278,12 +277,12 @@ def choices_from_phase26g(target, folds):
         raise FileNotFoundError(f'Missing frozen Phase26G selection: {path}')
     d = pd.read_csv(path)
     d = d[d.model.eq('xgb_80')]
-    from phase26g_feature_model_ablation import PARAMS
+    from cftr_theratype.models.regressors import PHASE26G_PARAMS
     choices = {}
     for r in d.itertuples(index=False):
         key = (int(r.repeat), int(r.fold))
         spec = ast.literal_eval(str(r.selected_param))
-        if key in choices or not isinstance(spec, tuple) or spec not in PARAMS['xgb']:
+        if key in choices or not isinstance(spec, tuple) or spec not in PHASE26G_PARAMS['xgb']:
             raise AssertionError(f'Invalid/duplicated frozen XGB parameter selection {key}: {spec}')
         choices[key] = spec
     expected = {(int(r), int(f)) for r, f, *_ in folds}
@@ -466,7 +465,6 @@ def analyze(args):
 
 def fit(args):
     d,x,folds,oof,checks,frozen_source=source_data()
-    import phase26g_feature_model_ablation as p26g
     args.out.mkdir(parents=True,exist_ok=True)
     keys=d.variant_key.astype(str).to_numpy()
     pos=d.protein_position.to_numpy(int)
