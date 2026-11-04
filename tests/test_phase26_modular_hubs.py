@@ -41,7 +41,7 @@ EXPECTED = {
 
 def test_all_15_legacy_helpers_delegate_to_canonical_package():
     n = 0
-    for rel, funcs in EXPECT.items():
+    for rel, funcs in EXPECTED.items():
         tree = ast.parse((ROOT / rel).read_text(encoding="utf-8"), filename=rel)
         functions = {
             x.name: x for x in tree.body
