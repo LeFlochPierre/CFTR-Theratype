@@ -9,7 +9,6 @@ Do not use these exploratory results to select a model on prior VAL/TEST.
 """
 from __future__ import annotations
 import argparse
-import sys
 from pathlib import Path
 
 import numpy as np
