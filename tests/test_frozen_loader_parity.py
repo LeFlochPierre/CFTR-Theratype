@@ -4,6 +4,7 @@ This is a genuine on-disk data integration test, not a synthetic test. It must
 not access protected validation/test outcomes or run during pytest collection.
 """
 from pathlib import Path
+import os
 import sys
 
 import numpy as np
@@ -22,10 +23,13 @@ def test_frozen_loader_parity():
     """Run on workstations with the ignored VTI TRAIN dataset; skip otherwise."""
     required = ROOT / "data/processed/bihler_2026_vti.parquet"
     if not required.is_file():
-        pytest.skip(
+        message = (
             f"Real-data Phase26D parity requires local ignored dataset: {required}. "
             "Run this test in a checkout with the protected TRAIN-only inputs available."
         )
+        if os.getenv("CFTR_REQUIRE_REAL_DATA") == "1":
+            pytest.fail(message, pytrace=False)
+        pytest.skip(message)
 
     # Load only the TRAIN cohort through the loader's existing filters.
     old = legacy.load_train()
