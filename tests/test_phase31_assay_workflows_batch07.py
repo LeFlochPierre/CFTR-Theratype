@@ -137,7 +137,12 @@ def test_teacher_crossfit_and_pilot_estimator_parity():
 
     old_model = legacy_i.model(12.5)
     new_model = make_pilot_teacher(12.5)
-    assert old_model.get_params() == new_model.get_params()
+    assert list(old_model.named_steps) == list(new_model.named_steps)
+    for name in old_model.named_steps:
+        assert (
+            old_model.named_steps[name].get_params(deep=False)
+            == new_model.named_steps[name].get_params(deep=False)
+        )
     assert old_model.named_steps["imputer"].get_params()["keep_empty_features"]
 
     positions = np.arange(50, 80)
