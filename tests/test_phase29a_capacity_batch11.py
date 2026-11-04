@@ -162,5 +162,13 @@ def test_position_mae_cluster_bootstrap_and_legacy_wrappers():
     assert old["positions"] == 2
     assert evaluation.pos_mae(frame, "truth", "new") == 0
     assert legacy.pos_mae(frame, "truth", "old") == pytest.approx(5.0)
+    incomplete = pd.DataFrame({
+        "variant_key": ["v1", "v2", "v1", "v2"],
+        "protein_position": [1, 2, 1, 2],
+        "observed_corrector": [5., 15., 5., 15.],
+        "observed_total": [10., 20., 10., 20.],
+    })
+    for config in canonical.CONFIGS:
+        incomplete[f"corrector_{config}"] = 7.0
     with pytest.raises(ValueError, match="Expected 210 variants"):
-        evaluation.averaged_one_variant(frame)
+        evaluation.averaged_one_variant(incomplete)
