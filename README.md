@@ -2,7 +2,9 @@
 
 Reproducible public-data research on CFTR in-vitro functional response, cross-assay transfer and prediction reliability. The genotype-only model development programme is an **exploratory benchmark**, not a clinical treatment recommendation or a demonstrated breakthrough.
 
-**Reference state:** Git branch `refactor/cftr-modular-cleanup`, Stage 6 prepared against `6698a9045276`. This repository's VTI/ETI validation and test outcomes remain protected; canonical commands below operate on TRAIN-only measurements and position-disjoint OOF assignments.
+**Research status: PAUSED (November 2026).** The Stage 6 modular refactor was merged into `main` on 2 November 2026. Historical experiment outputs are exploratory; there is no validated genotype-only treatment-selection model or clinical decision tool. Current `cftr` commands operate on TRAIN-only assays and position-disjoint OOF assignments, but earlier Phase26N/26O and other validation/test runs must be audited before claiming those outcome partitions were never examined.
+
+**Start here:** [Documentation index](docs/INDEX.md) · [Workstation cleanup and local archive](docs/WORKSTATION_CLEANUP.md) · [Preservation and freeze plan](docs/REPOSITORY_FREEZE_AND_CLEANUP.md). Do not delete root ZIPs, `data/`, `results/` or `logs/` before preserving them.
 
 ## Quick start
 
@@ -85,6 +87,11 @@ Historical modules remain importable to preserve old downstream experiments. Sta
 
 Read `docs/RESEARCH_CHECKPOINT.md` and `docs/REFACTOR_STAGE2.md` through `docs/REFACTOR_STAGE5.md` for provenance. Published datasets include Bihler 2024, Bihler 2026, and the McDonald-derived data (not an independent external replication). Raw spreadsheets and external assets may have separate redistribution licenses.
 
-The target is **in-vitro CFTR rescue**, not clinical efficacy. The published 2026 VTI assay is not identical to the marketed vanzacaftor/tezacaftor/deutivacaftor combination. Development folds, even if repeated, are not equivalent to independent clinical cohorts. Keep final VAL/TEST partitions sealed until a confirmatory protocol is frozen.
+The target is **in-vitro CFTR rescue**, not clinical efficacy. The published 2026 VTI assay is not identical to the marketed vanzacaftor/tezacaftor/deutivacaftor combination. Development folds, even if repeated, are not equivalent to independent clinical cohorts. Reconcile historical VAL/TEST outcome use and execution logs before making any independent evaluation claim; avoid rerunning those analyses during cleanup.
 
 See [Stage 6 migration guide](docs/refactor/STAGE6_MIGRATION.md) for installation, validation, rollback and next steps.
+
+
+## Research freeze and local-only work
+
+The remote GitHub snapshot does not currently include tracked Phase 33–39 code paths, although later-phase ZIP patches exist on RTX6. GitHub also ignores most scientific inputs, outputs and logs. Run the [workstation inventory and cleanup guide](docs/WORKSTATION_CLEANUP.md), retain hash-verified local archives, and only then simplify remaining numbered scripts and duplicate documents. Phase numbers are research history, not supported model versions. The [documentation index](docs/INDEX.md) groups the historical protocols without breaking their original paths.
