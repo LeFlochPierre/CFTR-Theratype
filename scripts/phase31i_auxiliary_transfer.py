@@ -68,6 +68,7 @@ from cftr_theratype.datasets.assay_tables import (
     agreement as _canonical_agreement,
     permute_by_position as _canonical_permute_by_position,
 )
+from cftr_theratype.models.assay_teachers import make_pilot_teacher as _canonical_make_pilot_teacher
 
 SAFE_META = set(ID_CANDIDATES + POSITION_CANDIDATES + [
     "variant_key", "mutation_type", "is_control", "study", "source_row", "split",
@@ -351,8 +352,8 @@ def load_vti_train(args, p: Path, feature_bank: pd.DataFrame, feature_names: lis
 
 
 def model(alpha: float):
-    return Pipeline([("imputer", SimpleImputer(strategy="median", keep_empty_features=True)),
-                     ("scale", StandardScaler()), ("ridge", Ridge(alpha=alpha))])
+    """Legacy API; canonical original Ridge pilot constructor."""
+    return _canonical_make_pilot_teacher(alpha)
 
 
 def teacher_tables(aux: dict[str, pd.DataFrame], bank: pd.DataFrame, feature_names: list[str]):
