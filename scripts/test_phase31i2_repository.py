@@ -69,14 +69,13 @@ def test():
         frozen=[]
         for k,(tr,te) in enumerate(GroupKFold(5).split(x80,groups=pos)):
             frozen.append((1,k+1,set(keys[tr]),set(keys[te])))
-        def fake_train(): return d, {'sequence_structure':x80,'sequence':x80[:,:68]},pd.DataFrame(),frozen,'synthetic'
+        def fake_train(root=None): return d, {'sequence_structure':x80,'sequence':x80[:,:68]},pd.DataFrame(),frozen,'synthetic'
         pd.read_parquet=read_parquet_fake
         m.ROOT=root
         m.OUT=root/'results/biology/phase31i'
         m.auxiliary.ROOT=root
-        m.prior.ROOT=root
-        m.prior.load_train=fake_train
-        m.phase26g.ROOT=root
+        old_train=m.frozen_vti.load_train
+        m.frozen_vti.load_train=fake_train
         # Fast XGBoost parity reference from PRESELECTED Phase26G spec.
         for target,ycol in [('corrector','corrector_rescue_pp'),('total','vti_rescue_pp')]:
             selections=[]; past=[]
@@ -84,7 +83,7 @@ def test():
                 tr=np.flatnonzero(np.isin(keys,list(trkeys)))
                 te=np.flatnonzero(np.isin(keys,list(tekeys)))
                 spec=(2,5.0,180)
-                mod=m.phase26g.make_model('xgb',spec)
+                mod=m.regressors.phase26g_model('xgb',spec)
                 mod.fit(x80[tr],d[ycol].to_numpy(float)[tr])
                 for i,pred in zip(te,mod.predict(x80[te])):
                     past.append(dict(repeat=rep,fold=fold,variant_key=keys[i],protein_position=pos[i],
@@ -106,5 +105,6 @@ def test():
             print('TEST PASSED: true Phase26G XGB parity, 5 outer position-disjoint folds, 2 outcomes, 5 models.')
         finally:
             pd.read_parquet=orig_read_parquet
+            m.frozen_vti.load_train=old_train
 
 if __name__=='__main__': test()

@@ -46,9 +46,8 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
 ROOT = Path.cwd()
-sys.path.insert(0, str(ROOT / 'scripts'))
-import phase26d_corrector_bottleneck as prior
-import phase26g_feature_model_ablation as phase26g
+from cftr_theratype.datasets import frozen_vti
+from cftr_theratype.models import regressors
 import phase31i_auxiliary_transfer as auxiliary
 
 OUT = ROOT / 'results/biology/phase31i'
@@ -230,7 +229,7 @@ def read_frozen_choices(target, folds, args):
         if key in mapping:
             raise ValueError(f'Duplicate Phase26G selection: {key}')
         choice=ast.literal_eval(str(row.selected_param))
-        if not isinstance(choice,tuple) or len(choice)!=3 or choice not in phase26g.PARAMS['xgb']:
+        if not isinstance(choice,tuple) or len(choice)!=3 or choice not in regressors.PHASE26G_PARAMS['xgb']:
             raise ValueError(f'Invalid Phase26G xgb_80 hyperparameters: {choice!r}')
         mapping[key]=choice
     missing=[(int(r),int(f)) for r,f,*_ in folds if (int(r),int(f)) not in mapping]
@@ -294,7 +293,7 @@ def summarize_and_bootstrap(oof, nboot, seed):
 
 def run(args, tables, manifest, out):
     # Canonical loader: enforced TRAIN-only VTI outcomes and frozen historical folds.
-    d,features,historical,folds,source=prior.load_train()
+    d,features,historical,folds,source=frozen_vti.load_train(ROOT)
     assert len(d)==210 and d.protein_position.nunique()==168
     keys=d.variant_key.astype(str).to_numpy()
     positions=d.protein_position.to_numpy(int)
@@ -352,7 +351,7 @@ def run(args, tables, manifest, out):
                 b=perm_te if useperm else teacher_te
                 xt=np.column_stack([x80[tr]]+[a[k] for k in required]) if required else x80[tr]
                 xv=np.column_stack([x80[te]]+[b[k] for k in required]) if required else x80[te]
-                estimator=phase26g.make_model('xgb',spec)
+                estimator=regressors.phase26g_model('xgb',spec)
                 estimator.fit(xt,y[tr])
                 pred=estimator.predict(xv)
                 if not np.isfinite(pred).all():
