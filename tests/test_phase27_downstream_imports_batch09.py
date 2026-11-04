@@ -36,7 +36,7 @@ def test_later_train_only_analyses_do_not_import_numbered_phase_modules():
         "scripts/phase27d1_biology_ablation.py",
         "scripts/phase27d3b_structure_ablation.py",
         "scripts/phase28a_trafficking_feature_audit.py",
-        "scripts/phase29b_predictability_ceiling_audit.py",
+        "archive/legacy/scripts/phase29b_predictability_ceiling_audit.py",
     ):
         assert not _numbered_imports(rel), (rel, _numbered_imports(rel))
 
