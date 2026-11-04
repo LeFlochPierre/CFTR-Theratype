@@ -33,7 +33,7 @@ ARCHIVED = {
 
 
 def _git_blob_id(data: bytes) -> str:
-    header = f"blob {len(data)}\\0".encode("utf-8")
+    header = f"blob {len(data)}".encode("utf-8") + bytes([0])
     return hashlib.sha1(header + data).hexdigest()
 
 
