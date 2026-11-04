@@ -27,3 +27,6 @@ where = ["src"]
 
 [project.optional-dependencies]
 modeling = ["xgboost>=1.7"]
+
+[tool.setuptools.package-data]
+cftr_theratype = ["resources/*.fasta"]
