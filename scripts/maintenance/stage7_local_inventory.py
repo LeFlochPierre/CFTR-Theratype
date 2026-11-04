@@ -61,7 +61,8 @@ def write_csv(path: Path, rows: list[dict], fieldnames: list[str]) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[2])
+    parser.add_argument("--root", type=Path, default=Path.cwd(),
+                        help="CFTR-Theratype repository root; defaults to current working directory")
     parser.add_argument("--hash-zips", action="store_true",
                         help="Compute SHA256 for root ZIPs (slower, recommended for final archival)")
     args = parser.parse_args()
