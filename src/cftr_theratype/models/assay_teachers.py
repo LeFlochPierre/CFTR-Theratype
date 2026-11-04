@@ -9,5 +9,3 @@ from sklearn.preprocessing import StandardScaler
 def make_teacher(alpha):
     return Pipeline([('impute',SimpleImputer(strategy='median')),
                      ('scale',StandardScaler()),('ridge',Ridge(alpha=alpha))])
-
-
