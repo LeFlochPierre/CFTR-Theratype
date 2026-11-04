@@ -43,5 +43,3 @@ def mutation_features(aa_codes: pd.Series) -> np.ndarray:
                np.sin(6*np.pi*rel), np.cos(6*np.pi*rel)]
         rows.append(wvec + avec + phys + loc)
     return np.asarray(rows, dtype=float)
-
-
