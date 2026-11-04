@@ -10,7 +10,6 @@ import argparse
 import ast
 import json
 import re
-import sys
 from pathlib import Path
 import numpy as np
 import pandas as pd
@@ -22,11 +21,11 @@ from sklearn.impute import SimpleImputer
 from sklearn.metrics import roc_auc_score, average_precision_score, brier_score_loss, balanced_accuracy_score
 
 ROOT = Path.cwd()
-sys.path.insert(0, str(ROOT / 'scripts'))
 from cftr_theratype.datasets.frozen_vti import load_train as load_vti_train
 from cftr_theratype.models.regressors import phase26g_model, PHASE26G_PARAMS
-import phase31i2_repository as p31i
-import phase31i_auxiliary_transfer as aux
+from cftr_theratype.datasets.assay_identifiers import with_ids, norm_aa
+from cftr_theratype.features.assay_substitutions import mutation_features
+from cftr_theratype.experiments.three_tracks_inputs import get_data as _get_data, load_esm as _load_esm
 
 OUT = ROOT / 'results/biology/phase31m'
 TARGETS = {'corrector': 'corrector_rescue_pp', 'total': 'vti_rescue_pp'}
@@ -34,27 +33,8 @@ MODEL_SELECTION = ROOT / 'results/biology/phase26g'
 
 
 def get_data():
-    d, feat, _, folds, source = load_vti_train(ROOT)
-    X = np.asarray(feat['sequence_structure'], dtype=float)
-    if len(d) != 210 or d.protein_position.nunique() != 168 or X.shape != (210, 80):
-        raise AssertionError('Unexpected frozen VTI TRAIN or feature representation')
-    if not d.transfer_split.eq('train').all() or np.isinf(X).any():
-        raise AssertionError('Protected partitions or invalid features')
-    keys = d.variant_key.astype(str).tolist()
-    metadata = pd.read_parquet(ROOT/'data/processed/bihler_2026_transfer_splits.parquet',
-                               columns=['variant_key','hgvs_protein','protein_position','transfer_split'])
-    metadata = metadata[metadata.transfer_split.eq('train')]
-    v = d[['variant_key','protein_position']].merge(
-        metadata[['variant_key','hgvs_protein','protein_position']], on='variant_key',
-        how='left', validate='one_to_one',suffixes=('','_meta'))
-    if v.hgvs_protein.isna().any() or not v.protein_position.eq(v.protein_position_meta).all():
-        raise AssertionError('VTI metadata/position mismatch')
-    v = aux.with_ids(v, 'VTI TRAIN', strict=True)
-    if not v.aa31i.str.fullmatch(r'[ACDEFGHIKLMNPQRSTVWY]\d+[ACDEFGHIKLMNPQRSTVWY]').all():
-        raise AssertionError('Non-missense VTI variant: ESMRank and multitask need separate handling')
-    if list(v.variant_key.astype(str)) != keys:
-        raise AssertionError('Variant order mismatch')
-    return d, X, folds, v
+    """Legacy experiment API; shared TRAIN-only alignment in src."""
+    return _get_data(ROOT)
 
 
 def load_eti():
@@ -71,7 +51,7 @@ def load_eti():
                                         errors='coerce').dropna().astype(int))
     b = b.merge(splits,on='variant_key',how='inner',validate='one_to_one')
     b = b[b.split.eq('train') & ~b.protein_position.isin(protected)].copy()
-    b = aux.with_ids(b, 'ETI protected-filtered TRAIN')
+    b = with_ids(b, 'ETI protected-filtered TRAIN')
     b = b[b.aa31i.notna() & b.pos31i2.notna() & ~b.control31i].copy()
     if not b.protein_position.eq(b.pos31i2.astype(int)).all():
         raise AssertionError('ETI position mismatch')
@@ -180,7 +160,7 @@ def prepare_esm(args):
     meta=meta[meta.transfer_split.eq('train')]
     if len(meta)!=210 or meta.variant_key.duplicated().any() or meta.protein_position.nunique()!=168:
         raise AssertionError('Frozen 2026 VTI TRAIN metadata changed')
-    v=aux.with_ids(meta[['variant_key','hgvs_protein','protein_position']], 'VTI TRAIN', strict=True)
+    v=with_ids(meta[['variant_key','hgvs_protein','protein_position']], 'VTI TRAIN', strict=True)
     codes=sorted(v.aa31i.unique())
     if not all(re.fullmatch(r'[ACDEFGHIKLMNPQRSTVWY]\d+[ACDEFGHIKLMNPQRSTVWY]', a) for a in codes):
         raise ValueError('Noncanonical missense variant in VTI TRAIN metadata')
@@ -201,15 +181,8 @@ def prepare_esm(args):
 
 
 def load_esm(path):
-    z=pd.read_csv(path)
-    if not {'ids','prediction'}.issubset(z): raise ValueError('Expected ESMRank predictions columns: ids,prediction')
-    z=z[['ids','prediction']].copy()
-    z['aa31i']=z.ids.astype(str).map(aux.norm_aa)
-    if z.aa31i.isna().any() or z.aa31i.duplicated().any():
-        raise ValueError('Cannot map unique ESMRank ids to substitutions; inspect output')
-    z.prediction=pd.to_numeric(z.prediction,errors='coerce')
-    if not np.isfinite(z.prediction.to_numpy(float)).all():raise ValueError('Nonfinite ESMRank score')
-    return z.set_index('aa31i').prediction
+    """Legacy experiment API; shared ESMRank score loading in src."""
+    return _load_esm(path)
 
 
 def esm_eval(args):
@@ -255,8 +228,8 @@ def transfer(args):
     d,X,folds,v=get_data()
     eti,protected=load_eti()
     print(f'ETI eligible unique substitutions={len(eti)}, positions={eti.protein_position.nunique()}')
-    etix=p31i.mutation_features(eti.aa31i)
-    vtix=p31i.mutation_features(v.aa31i)
+    etix=mutation_features(eti.aa31i)
+    vtix=mutation_features(v.aa31i)
     pos=d.protein_position.to_numpy(int); keys=d.variant_key.astype(str).to_numpy()
     epi=eti.protein_position.to_numpy(int)
     rows=[]
