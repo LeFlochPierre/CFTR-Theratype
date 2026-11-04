@@ -49,60 +49,6 @@ def choose_weight(Xv, yv, gv, Xe, ye, ge, weights=WEIGHTS, shuffle_seed=None):
     from cftr_theratype.models.auxiliary import choose_weight as shared
     return shared(Xv, yv, gv, Xe, ye, ge, weights=weights, shuffle_seed=shuffle_seed)
 
-):
-    scores = {}
-
-    for weight in weights:
-        preds = np.full(len(yv), np.nan)
-
-        cv = GroupKFold(3)
-
-        for inner_fold, (it, iv) in enumerate(
-            cv.split(Xv, yv, gv), 1
-        ):
-            # Remove ETI observations at inner-held-out
-            # VTI positions before fitting or shuffling.
-            allowed = ~np.isin(
-                ge,
-                np.unique(gv[iv])
-            )
-
-            if not np.any(allowed):
-                raise ValueError(
-                    "No eligible inner-fold ETI supervision"
-                )
-
-            if shuffle_seed is None:
-                fold_labels = ye[allowed]
-            else:
-                fold_labels = positional_shuffle(
-                    ye[allowed],
-                    ge[allowed],
-                    seed=shuffle_seed + inner_fold
-                )
-
-            est = fit_joint(
-                Xv[it],
-                yv[it],
-                Xe[allowed],
-                fold_labels,
-                weight
-            )
-
-            preds[iv] = est.predict(Xv[iv])
-
-        scores[weight] = previous.pos_mae(
-            yv, preds, gv
-        )
-
-    choice = min(
-        weights,
-        key=lambda w: (scores[w], w)
-    )
-
-    return choice, scores[choice]
-
-
 def benchmark(vti, V80, eti, E80, folds, shuffles):
     keys = vti.variant_key.astype(str).to_numpy()
     vp = vti.protein_position.to_numpy(int)
