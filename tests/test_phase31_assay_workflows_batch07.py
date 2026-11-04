@@ -41,7 +41,9 @@ def test_assay_tables_legacy_parity():
 
     a, b = assay_tables.agreement(canonical, canonical, "p289", "p289")
     c, d = legacy.agreement(historical, historical, "p289", "p289")
-    assert a == c
+    assert a.keys() == c.keys()
+    for key in a:
+        assert (pd.isna(a[key]) and pd.isna(c[key])) or a[key] == c[key]
     pd.testing.assert_frame_equal(b, d, check_exact=True)
     rng = np.random.default_rng(3113)
     old = legacy.permute_by_position(canonical, np.random.default_rng(3113))
@@ -120,3 +122,43 @@ def test_phase31j_has_no_numbered_module_imports():
         and node.func.value.attr == "path"
         for node in ast.walk(tree)
     ), "Phase31J should not modify sys.path to load numbered scripts"
+
+def test_teacher_crossfit_and_pilot_estimator_parity():
+    import sys
+    scripts = str(ROOT / "scripts")
+    if scripts not in sys.path:
+        sys.path.insert(0, scripts)
+    import phase31i2_repository as legacy_i2
+    import phase31i_auxiliary_transfer as legacy_i
+
+    from cftr_theratype.models.assay_teachers import (
+        make_pilot_teacher, crossfit_teacher_predictions,
+    )
+
+    old_model = legacy_i.model(12.5)
+    new_model = make_pilot_teacher(12.5)
+    assert old_model.get_params() == new_model.get_params()
+    assert old_model.named_steps["imputer"].get_params()["keep_empty_features"]
+
+    positions = np.arange(50, 80)
+    table = pd.DataFrame({
+        "aa31i": [f"A{p}V" for p in positions],
+        "pos31i2": positions,
+        "value31i": np.cos(positions / 13.0),
+    })
+    train_positions = np.arange(55, 67)
+    training = pd.Series([f"A{p}V" for p in train_positions])
+    held = pd.Series(["A80V", "A81V"])
+    args = (
+        table, training, train_positions, held, np.array([80, 81]),
+        {80, 81}, 50.0,
+    )
+    old_oof, old_held = legacy_i2.teacher_predictions(
+        *args, negative_seed=14, inner_folds=3,
+    )
+    new_oof, new_held = crossfit_teacher_predictions(
+        *args, negative_seed=14, inner_folds=3,
+    )
+    np.testing.assert_array_equal(old_oof, new_oof)
+    np.testing.assert_array_equal(old_held, new_held)
+    assert np.isfinite(old_oof).all() and np.isfinite(old_held).all()
