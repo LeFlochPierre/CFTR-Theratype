@@ -27,7 +27,6 @@ from scipy.stats import spearmanr
 from sklearn.model_selection import GroupKFold
 
 ROOT = Path.cwd()
-sys.path.insert(0, str(ROOT / 'scripts'))
 OUT = ROOT / 'results/biology/phase31j'
 
 # Shared functions are re-exported to preserve imports from historical scripts.
@@ -183,8 +182,8 @@ def transferred_gain_strata(oof31,base,strata,nboot,seed):
 
 
 def run_vti(args):
-    import phase26d_corrector_bottleneck as prior
-    d,_,_,folds,source=prior.load_train()
+    from cftr_theratype.datasets.frozen_vti import load_train
+    d,_,_,folds,source=load_train(ROOT)
     if len(d)!=210 or d.protein_position.nunique()!=168 or not d.transfer_split.eq('train').all():
         raise AssertionError('Frozen VTI TRAIN contract failed')
     print('Phase 31J RUN | 210 TRAIN variants / 168 positions | frozen folds:',source)
@@ -271,15 +270,14 @@ def run_vti(args):
 
 def teacher_diagnostics(args):
     # Separate from Phase31J RUN: NO VTI outcomes loaded in this function.
-    import phase31i2_repository as phase31i
-    from phase31i_auxiliary_transfer import ROOT as helper_root
-    if Path(helper_root).resolve()!=ROOT.resolve():
-        raise ValueError('Phase31I helper root differs from current repository')
+    from cftr_theratype.datasets.assay_sources import (
+        get_sources, protected_and_eligible_positions, load_auxiliary,
+    )
     opts=argparse.Namespace(bihler=args.bihler,s5=args.s5,s6=args.s6,
                             splits2024=args.splits2024,vti_meta=args.vti_meta)
-    paths=phase31i.get_sources(opts)
-    positions,protected=phase31i.protected_and_eligible_positions(paths)
-    tables,coverage=phase31i.load_auxiliary(paths,positions,protected)
+    paths=get_sources(opts, ROOT)
+    positions,protected=protected_and_eligible_positions(paths)
+    tables,coverage=load_auxiliary(paths,positions,protected)
     print('Phase31J TEACHERS: position-held-out internal assay CV; no VTI labels loaded')
     from cftr_theratype.features.assay_substitutions import mutation_features
     from cftr_theratype.models.assay_teachers import make_teacher
