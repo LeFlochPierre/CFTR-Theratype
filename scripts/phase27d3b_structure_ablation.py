@@ -9,8 +9,6 @@ Do not use these exploratory results to select a model on prior VAL/TEST.
 """
 from __future__ import annotations
 import argparse
-import hashlib
-import sys
 from pathlib import Path
 
 import numpy as np
@@ -25,35 +23,13 @@ PROVENANCE = OUT / 'phase27d3_structure_provenance.csv'
 FROZEN = OUT / 'phase27d1_repeated_oof.csv'
 KEY = ['task', 'repeat', 'fold', 'variant_key', 'protein_position']
 
-SPECS = {
-    '8EIG': {
-        'dmin': '8eig_elexacaftor_VX445_min_heavy_A',
-        'dca': '8eig_elexacaftor_VX445_ca_A',
-        'obs': '8eig_observed',
-    },
-    '7SV7': {
-        'dmin': '7sv7_tezacaftor_VX661_min_heavy_A',
-        'dca': '7sv7_tezacaftor_VX661_ca_A',
-        'obs': '7sv7_observed',
-    }
-}
+from cftr_theratype.features.structure_provenance import SPECS
 
 
 def verify_provenance():
-    if not PROVENANCE.is_file():
-        raise FileNotFoundError(f'Missing Phase 27D-3A structure provenance: {PROVENANCE}')
-    info = pd.read_csv(PROVENANCE)
-    if info.pdb.duplicated().any() or set(info.pdb) != set(SPECS):
-        raise ValueError('Unexpected PDB provenance')
-    for row in info.itertuples(index=False):
-        if row.canonical_agreement < .99:
-            raise ValueError(f'Insufficient sequence agreement for {row.pdb}')
-        if row.mismatches_canonical != 1 or '(1371,' not in str(row.first_mismatches):
-            raise ValueError(f'Unexpected mismatch set for {row.pdb}; inspect mapping')
-        path = ROOT / 'data/external/cftr_structures' / f'{row.pdb}.pdb'
-        if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != row.file_sha256:
-            raise ValueError(f'Structure file missing or changed since Phase 27D-3A: {path}')
-    return info
+    """Historical API: validate this experiment's local PDB provenance."""
+    from cftr_theratype.features.structure_provenance import verify_provenance as shared
+    return shared(PROVENANCE, ROOT, SPECS)
 
 
 def load_geometry():

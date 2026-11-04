@@ -18,7 +18,6 @@ import argparse
 import hashlib
 import json
 import re
-import sys
 from pathlib import Path
 
 import numpy as np
@@ -30,7 +29,6 @@ from Bio.SeqUtils import seq1, seq3
 from scipy.spatial import cKDTree
 
 ROOT=Path.cwd()
-sys.path.insert(0,str(ROOT/'scripts'))
 OUT=ROOT/'results/biology/phase28c'
 PDB_ROOT=ROOT/'data/external/cftr_structures'
 FROZEN=ROOT/'results/biology/phase26h2/phase26h2_oof.csv'
@@ -250,9 +248,12 @@ def run(args):
     from cftr_theratype.features.mutation_codes import extract_codes
     from cftr_theratype.models.regressors import phase26d_model
     from cftr_theratype.models.auxiliary import SPEC as FROZEN_XGB_SPEC
-    import phase27d3b_structure_ablation as d3
+    from cftr_theratype.features.structure_provenance import verify_provenance
     if not FROZEN.is_file():raise FileNotFoundError(f'Missing frozen OOF: {FROZEN}')
-    d3.verify_provenance()
+    verify_provenance(
+        ROOT / 'results/biology/phase27d/phase27d3_structure_provenance.csv',
+        ROOT,
+    )
     v,x80,_,_,folds=load_data(ROOT)     # TRAIN partition only
     xx=np.asarray(x80,float); pp=v.protein_position.to_numpy(int)
     keys=v.variant_key.astype(str).to_numpy(); yc=v.corrector_rescue_pp.to_numpy(float)
