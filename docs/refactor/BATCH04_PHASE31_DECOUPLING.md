@@ -46,6 +46,22 @@ PYTHONPATH="$PWD/src" python -m pytest -q tests/
 git diff --check origin/main...HEAD
 ```
 
+The maintained suite also contains `tests/test_frozen_loader_parity.py`, a
+**real-data** Phase26D wrapper/loader integration check. In an isolated worktree
+without ignored `data/processed/bihler_2026_vti.parquet`, this test now reports
+`SKIPPED` instead of failing at test collection. This is **not evidence that
+real-data parity passed**. With a fully provisioned TRAIN-only dataset, enforce
+the real-data gate explicitly:
+
+```bash
+CFTR_REQUIRE_REAL_DATA=1 PYTHONPATH="$PWD/src" \
+  python -m pytest -q -rs tests/test_frozen_loader_parity.py
+```
+
+When the data are absent and the strict flag is set, the test fails with a
+clear explanation. Do not copy protected or restricted outcomes into worktrees
+just to satisfy a cleanup smoke test.
+
 Standalone integration tests use synthetic data and in-memory monkeypatching.
 They may be slower due to XGBoost, but must not touch protected outcomes.
 Do **not** run locked Phase26N/O or Phase27F validation/test workflows as
