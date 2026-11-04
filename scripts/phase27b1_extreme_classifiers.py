@@ -28,6 +28,14 @@ from xgboost import XGBClassifier
 ROOT = Path.cwd()
 
 from cftr_theratype.datasets.eti_auxiliary import load_data as load_eti_train
+from cftr_theratype.models.responder_classifiers import (
+    make_labels as _canonical_make_labels,
+    make_model as _canonical_make_model,
+)
+from cftr_theratype.evaluation.responder_classification import (
+    metrics as _canonical_metrics,
+    ap_gain_bootstrap as _canonical_ap_gain_bootstrap,
+)
 
 
 OUT = ROOT / "results/biology/phase27b"
@@ -47,164 +55,23 @@ TASKS = [
 
 
 def make_labels(y, direction, threshold):
-    if direction == "low":
-        return (y < threshold).astype(int)
-    return (y > threshold).astype(int)
+    """Legacy API; canonical responder task labels."""
+    return _canonical_make_labels(y, direction, threshold)
 
 
 def make_model(name, y_train, seed):
-    if name == "logistic_seq68":
-        return make_pipeline(
-            StandardScaler(),
-            LogisticRegression(
-                C=0.1,
-                solver="liblinear",
-                max_iter=3000,
-            ),
-        )
-
-    if name == "xgb_seq80":
-        pos = int(y_train.sum())
-        neg = len(y_train) - pos
-
-        return XGBClassifier(
-            n_estimators=140,
-            max_depth=2,
-            learning_rate=0.05,
-            min_child_weight=5,
-            subsample=0.9,
-            colsample_bytree=0.9,
-            reg_lambda=10.0,
-            scale_pos_weight=min(
-                8.0, neg / max(pos, 1)
-            ),
-            objective="binary:logistic",
-            eval_metric="logloss",
-            tree_method="hist",
-            n_jobs=4,
-            random_state=seed,
-        )
-
-    raise KeyError(name)
+    """Legacy API; canonical fixed classifier family and hyperparameters."""
+    return _canonical_make_model(name, y_train, seed)
 
 
 def metrics(y, score, probability=False):
-    y = np.asarray(y, int)
-    score = np.asarray(score, float)
-
-    if not np.isfinite(score).all():
-        raise ValueError("Nonfinite model score")
-
-    if len(np.unique(y)) < 2:
-        return None
-
-    n = max(1, int(np.ceil(0.2 * len(y))))
-
-    top = np.argsort(
-        -score, kind="stable"
-    )[:n]
-
-    hits = int(y[top].sum())
-    prevalence = float(y.mean())
-
-    return {
-        "n": len(y),
-        "positives": int(y.sum()),
-        "prevalence": prevalence,
-        "auroc": float(
-            roc_auc_score(y, score)
-        ),
-        "ap": float(
-            average_precision_score(y, score)
-        ),
-        "top20_hits": hits,
-        "top20_selected": n,
-        "top20_precision": hits / n,
-        "top20_recall": hits / int(y.sum()),
-        "top20_lift": (
-            hits / n / prevalence
-        ),
-        "brier": (
-            float(brier_score_loss(y, score))
-            if probability else np.nan
-        ),
-    }
+    """Legacy API; canonical responder metrics."""
+    return _canonical_metrics(y, score, probability=probability)
 
 
-def ap_gain_bootstrap(
-    df, baseline, candidate, nboot, seed
-):
-    """Position-cluster bootstrap of AP gain."""
-
-    positions = df.protein_position.unique()
-
-    groups = {
-        p: df.loc[
-            df.protein_position.eq(p)
-        ]
-        for p in positions
-    }
-
-    y = df.label.to_numpy(int)
-
-    observed = (
-        average_precision_score(
-            y, df[candidate]
-        )
-        - average_precision_score(
-            y, df[baseline]
-        )
-    )
-
-    rng = np.random.default_rng(seed)
-    draws = np.empty(nboot, float)
-
-    for i in range(nboot):
-        sampled = rng.choice(
-            positions,
-            size=len(positions),
-            replace=True,
-        )
-
-        q = pd.concat(
-            [groups[p] for p in sampled],
-            ignore_index=True,
-        )
-
-        z = q.label.to_numpy(int)
-
-        if len(np.unique(z)) < 2:
-            draws[i] = np.nan
-        else:
-            draws[i] = (
-                average_precision_score(
-                    z, q[candidate]
-                )
-                - average_precision_score(
-                    z, q[baseline]
-                )
-            )
-
-    good = draws[np.isfinite(draws)]
-
-    if len(good) < nboot * 0.95:
-        raise ValueError(
-            "Too many bootstrap samples "
-            "lack a responder class"
-        )
-
-    return {
-        "candidate": candidate,
-        "reference": baseline,
-        "ap_gain": float(observed),
-        "ci95_low": float(
-            np.quantile(good, .025)
-        ),
-        "ci95_high": float(
-            np.quantile(good, .975)
-        ),
-        "positions": len(positions),
-    }
+def ap_gain_bootstrap(df, baseline, candidate, nboot, seed):
+    """Legacy API; canonical position-cluster AP interval."""
+    return _canonical_ap_gain_bootstrap(df, baseline, candidate, nboot, seed)
 
 
 def run(nboot):
