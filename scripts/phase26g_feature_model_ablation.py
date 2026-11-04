@@ -8,7 +8,6 @@ No protected validation/test outcomes are loaded.
 
 import argparse
 from pathlib import Path
-import sys
 import warnings
 
 import numpy as np
@@ -24,10 +23,6 @@ from sklearn.model_selection import GroupKFold
 from xgboost import XGBRegressor
 
 ROOT = Path.cwd()
-sys.path.insert(0, str(ROOT / "scripts"))
-
-import phase26d_corrector_bottleneck as prior
-
 SETUPS = [
     ("ridge_68", "sequence", "ridge", None),
     ("ridge_80", "sequence_structure", "ridge", None),
@@ -75,7 +70,8 @@ def main():
     ap.add_argument("--bootstraps", type=int, default=5000)
     args = ap.parse_args()
 
-    d, features, _, folds, _ = prior.load_train()
+    from cftr_theratype.datasets.frozen_vti import load_train
+    d, features, _, folds, _ = load_train(ROOT)
 
     if args.target == "corrector":
         y = d.corrector_rescue_pp.to_numpy(float)

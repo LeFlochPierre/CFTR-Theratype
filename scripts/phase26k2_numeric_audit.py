@@ -6,76 +6,35 @@ Parse numeric values conservatively; unrecognised formats remain missing.
 """
 
 from pathlib import Path
-import sys
-import re
 import numpy as np
 import pandas as pd
 from scipy.stats import spearmanr
 
 ROOT = Path.cwd()
-sys.path.insert(0, str(ROOT / "scripts"))
-
-from phase26k_trafficking_preflight import (
-    load_allowed,
-    mutation_code,
-    position_from_code,
+from cftr_theratype.datasets.phenotype_training import (
+    load_allowed as _canonical_load_allowed,
 )
+from cftr_theratype.features.mutation_codes import (
+    mutation_code, position_from_code,
+)
+
+
+def load_allowed():
+    """Legacy Phase26K-2 API; strictly TRAIN-only canonical loader."""
+    return _canonical_load_allowed(ROOT)
 
 BOOK = ROOT / "data/external/tedman2025/cftr_expression.xlsx"
 OUT = ROOT / "results/biology/phase26k"
 
-NUMBER = r"[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?"
-
-SINGLE = re.compile(
-    rf"^\s*({NUMBER})\s*%?\s*$"
-)
-
-PLUSMINUS = re.compile(
-    rf"^\s*({NUMBER})\s*(?:±|\+/-)\s*({NUMBER})\s*%?\s*$"
+from cftr_theratype.features.phenotype_values import (
+    NUMBER, SINGLE, PLUSMINUS,
+    parse_value as _canonical_parse_value,
 )
 
 
 def parse_value(value):
-    if pd.isna(value):
-        return np.nan, "missing"
-
-    if isinstance(
-        value,
-        (int, float, np.integer, np.floating)
-    ):
-        return (
-            (float(value), "numeric")
-            if np.isfinite(value)
-            else (np.nan, "missing")
-        )
-
-    s = (
-        str(value)
-        .strip()
-        .replace("\u2212", "-")
-        .replace("\u2013", "-")
-        .replace("\xa0", " ")
-    )
-
-    missing = {
-        "", "n/a", "na", "nd", "nan",
-        "none", "-", "not determined"
-    }
-
-    if s.casefold() in missing:
-        return np.nan, "missing"
-
-    m = SINGLE.fullmatch(s)
-
-    if m:
-        return float(m.group(1)), "numeric_string"
-
-    m = PLUSMINUS.fullmatch(s)
-
-    if m:
-        return float(m.group(1)), "mean_plusminus"
-
-    return np.nan, "UNRECOGNISED"
+    """Legacy API for exact conservative phenotype parsing."""
+    return _canonical_parse_value(value)
 
 
 def self_test():
