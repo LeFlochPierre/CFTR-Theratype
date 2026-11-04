@@ -23,12 +23,25 @@ from sklearn.impute import SimpleImputer
 from sklearn.metrics import average_precision_score
 
 ROOT = Path.cwd()
-sys.path.insert(0, str(ROOT/'scripts'))
 REFERENCE = ROOT/'results/biology/phase26h2/phase26h2_oof.csv'
 OUT = ROOT/'results/biology/phase29a'
 KEY = ['repeat','fold','variant_key','protein_position']
-CONFIGS = ['global','higher_capacity','response_balanced',
-           'capacity_balanced','extra_trees']
+# Re-export canonical fixed configurations for the historical CLI.
+from cftr_theratype.models.response_capacity import (
+    CONFIGS,
+    regime as _canonical_regime,
+    weights_by_train_regime as _canonical_weights_by_train_regime,
+    cap_model as _canonical_cap_model,
+    make_model as _canonical_make_model,
+    fit_predict as _canonical_fit_predict,
+)
+from cftr_theratype.evaluation.response_capacity import (
+    pos_mae as _canonical_pos_mae,
+    gain_bootstrap as _canonical_gain_bootstrap,
+    averaged_one_variant as _canonical_averaged_one_variant,
+)
+from cftr_theratype.models.regressors import phase26d_model
+from cftr_theratype.models.auxiliary import SPEC
 
 
 def sha(path):
@@ -40,100 +53,46 @@ def sha(path):
 
 
 def regime(y):
-    y=np.asarray(y, float)
-    return np.where(y < 10, 'low', np.where(y > 40, 'high','middle'))
+    """Legacy public script API: canonical response regime assignment."""
+    return _canonical_regime(y)
 
 
 def weights_by_train_regime(y):
-    """Equal total TRAIN weight per regime, never uses held-out y."""
-    groups=regime(y)
-    counts={name:int((groups==name).sum()) for name in ('low','middle','high')}
-    if any(v==0 for v in counts.values()):
-        raise ValueError(f'Outer training fold missing regime: {counts}')
-    w=np.array([len(y)/(3*counts[g]) for g in groups],float)
-    if not np.isfinite(w).all() or not np.isclose(w.mean(),1):
-        raise ValueError('Invalid training weights')
-    return w,counts
+    """Legacy API: equal outer-TRAIN total weight per regime."""
+    return _canonical_weights_by_train_regime(y)
 
 
 def cap_model(base):
-    """Increase capacity while preserving the original feature and estimator interface."""
-    params=base.get_params()
-    needed={'max_depth','min_child_weight','n_estimators','learning_rate',
-            'reg_lambda','subsample','colsample_bytree'}
-    # XGBRegressor exposes these even if original parameters are unset (None).
-    if not needed.issubset(params):
-        raise TypeError(f'Expected XGBRegressor-like model; missing {needed-set(params)}')
-    return base.set_params(max_depth=5, min_child_weight=1,
-                           n_estimators=350, learning_rate=0.04,
-                           reg_lambda=1.0, subsample=0.9,
-                           colsample_bytree=0.9, n_jobs=4,
-                           random_state=29)
+    """Legacy API: original increased-capacity XGB configuration."""
+    return _canonical_cap_model(base)
 
 
 def make_model(h, config):
-    if config=='extra_trees':
-        return ExtraTreesRegressor(n_estimators=250, max_features=0.8,
-                                   min_samples_leaf=2, max_depth=None,
-                                   bootstrap=False, n_jobs=4, random_state=29)
-    model=h.previous.model(h.SPEC)
-    if config in ('higher_capacity','capacity_balanced'):
-        model=cap_model(model)
-    return model
+    """Legacy API: `h` was the Phase26H module and is now unnecessary.
+
+    The historical Phase26H model factory has been canonical since Batch08.
+    """
+    return _canonical_make_model(config)
 
 
 def fit_predict(h, config, xtr, ytr, xte):
-    model=make_model(h,config)
-    sample_weight=None
-    if config in ('response_balanced','capacity_balanced'):
-        sample_weight,_=weights_by_train_regime(ytr)
-    if config=='extra_trees':
-        imp=SimpleImputer(strategy='median',add_indicator=True,
-                          keep_empty_features=True)
-        xtr=imp.fit_transform(xtr)
-        xte=imp.transform(xte)
-    if sample_weight is None:
-        model.fit(xtr,ytr)
-    else:
-        model.fit(xtr,ytr,sample_weight=sample_weight)
-    train_pred=np.asarray(model.predict(xtr),float).reshape(-1)
-    test_pred=np.asarray(model.predict(xte),float).reshape(-1)
-    if len(train_pred)!=len(ytr) or len(test_pred)!=len(xte):
-        raise ValueError('Model prediction cardinality mismatch')
-    if not np.isfinite(train_pred).all() or not np.isfinite(test_pred).all():
-        raise ValueError('Nonfinite prediction')
-    return train_pred,test_pred
+    """Legacy API retaining its original signature, without Phase26H import."""
+    return _canonical_fit_predict(config, xtr, ytr, xte)
 
 
 def pos_mae(d, label, pred):
-    q=d[['protein_position',label,pred]].copy()
-    q['ae']=(q[label]-q[pred]).abs()
-    return float(q.groupby('protein_position').ae.mean().mean())
+    """Legacy API: same per-position-averaged absolute error."""
+    return _canonical_pos_mae(d, label, pred)
 
 
 def gain_bootstrap(frame, candidate, reference, truth, nboot, seed):
-    q=frame[['repeat','protein_position',candidate,reference,truth]].copy()
-    q['delta']=(q[reference]-q[truth]).abs()-(q[candidate]-q[truth]).abs()
-    perpos=(q.groupby(['repeat','protein_position']).delta.mean()
-            .groupby('protein_position').mean().to_numpy(float))
-    rng=np.random.default_rng(seed)
-    draws=rng.integers(0,len(perpos),size=(nboot,len(perpos)))
-    dist=perpos[draws].mean(axis=1)
-    return {'target':truth,'candidate':candidate,'reference':reference,
-            'mae_gain_pp':float(perpos.mean()),
-            'ci95_low':float(np.quantile(dist,.025)),
-            'ci95_high':float(np.quantile(dist,.975)),
-            'positions':len(perpos)}
+    """Legacy API: same deterministic position bootstrap."""
+    return _canonical_gain_bootstrap(frame, candidate, reference, truth, nboot, seed)
 
 
 def averaged_one_variant(oof):
-    first=oof.groupby(['variant_key','protein_position'],as_index=False).agg(
-        observed_corrector=('observed_corrector','first'),
-        observed_total=('observed_total','first'))
-    preds=oof.groupby('variant_key',as_index=False)[[f'corrector_{k}' for k in CONFIGS]].mean()
-    out=first.merge(preds,on='variant_key',validate='one_to_one')
-    if len(out)!=210: raise ValueError('Expected 210 variants after repeat aggregation')
-    return out
+    """Legacy API: same frozen two-repeat aggregation contract."""
+    return _canonical_averaged_one_variant(oof)
 
 
 def self_test():
@@ -149,8 +108,8 @@ def self_test():
 
 
 def run(args):
-    import phase26h_auxiliary_corrector as h
-    v,X80,_,_,folds=h.load_data()
+    from cftr_theratype.datasets.eti_auxiliary import load_data
+    v,X80,_,_,folds=load_data(ROOT)
     x=np.asarray(X80,float)
     y=v.corrector_rescue_pp.to_numpy(float)
     total=v.vti_rescue_pp.to_numpy(float)
@@ -174,7 +133,7 @@ def run(args):
     print('Frozen global + acute parity required. Class weights use OUTER TRAIN ONLY.')
     print('All candidates fixed in advance; NO VAL/TEST labels; previously reused TRAIN folds.')
     print('Regime-balanced training optimises a different objective; evaluate both overall and balanced MAE.')
-    print('Baseline estimator parameters:',h.previous.model(h.SPEC).get_params())
+    print('Baseline estimator parameters:',phase26d_model(SPEC).get_params())
     rows=[];trainrows=[];checks=[]
     for i,(repeat,fold,tr_keys,te_keys) in enumerate(folds,1):
         tr=np.flatnonzero(np.isin(keys,list(tr_keys)))
@@ -192,7 +151,7 @@ def run(args):
         acute=ref.vti_fixed_total.to_numpy(float)-ref.vti_fixed.to_numpy(float)
         predictions={}
         for conf in CONFIGS:
-            yh_tr,yh_te=fit_predict(h,conf,x[tr],y[tr],x[te])
+            yh_tr,yh_te=_canonical_fit_predict(conf,x[tr],y[tr],x[te])
             predictions[conf]=yh_te
             trainrows.append({'repeat':repeat,'fold':fold,'model':conf,
                               'train_variant_mae_pp':float(np.abs(yh_tr-y[tr]).mean()),
