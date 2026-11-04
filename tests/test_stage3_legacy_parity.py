@@ -13,6 +13,7 @@ sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT / "scripts"))
 
 import phase26g_feature_model_ablation as legacy
+from cftr_theratype.datasets import frozen_vti
 from cftr_theratype.experiments.feature_benchmark import evaluate, compare_oof
 
 
@@ -39,7 +40,14 @@ def test_phase26g_full_config_synthetic_parity(monkeypatch, tmp_path):
                 heldpos = {i for i in range(20) if i % 2 == (fold - 1)}
             test = set(keys[np.isin(pos, list(heldpos))])
             folds.append((repeat, fold, set(keys) - test, test))
-    monkeypatch.setattr(legacy.prior, "load_train", lambda: (d, features, None, folds, "synthetic"))
+    # Phase26G now imports the canonical TRAIN loader inside main().
+    # Patch that actual call path rather than restoring the obsolete
+    # Phase26D script-import dependency just for this synthetic test.
+    def synthetic_train_loader(root):
+        assert Path(root) == tmp_path
+        return d, features, None, folds, "synthetic"
+
+    monkeypatch.setattr(frozen_vti, "load_train", synthetic_train_loader)
     monkeypatch.setattr(legacy, "ROOT", tmp_path)
     monkeypatch.setattr(sys, "argv", ["phase26g_feature_model_ablation.py", "--target", "total", "--fast", "--bootstraps", "10"])
     legacy.main()
