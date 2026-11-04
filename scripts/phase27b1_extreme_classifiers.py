@@ -26,9 +26,9 @@ from sklearn.preprocessing import StandardScaler
 from xgboost import XGBClassifier
 
 ROOT = Path.cwd()
-sys.path.insert(0, str(ROOT / "scripts"))
 
-import phase26h_auxiliary_corrector as h
+from cftr_theratype.datasets.eti_auxiliary import load_data as load_eti_train
+
 
 OUT = ROOT / "results/biology/phase27b"
 REF = ROOT / "results/biology/phase26h2/phase26h2_oof.csv"
@@ -218,7 +218,7 @@ def run(nboot):
     )
 
     # Existing audited TRAIN-only loader.
-    v, V80, _, _, folds = h.load_data()
+    v, V80, _, _, folds = load_eti_train(ROOT)
 
     V80 = np.asarray(V80, float)
 
