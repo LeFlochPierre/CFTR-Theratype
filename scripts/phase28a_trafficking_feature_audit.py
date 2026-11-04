@@ -31,7 +31,6 @@ import numpy as np
 import pandas as pd
 
 ROOT = Path.cwd()
-sys.path.insert(0, str(ROOT / 'scripts'))
 OUT = ROOT / 'results/biology/phase28a'
 DEFAULT_XLSX = ROOT / 'data/external/tedman2025_canx/elife-107180-supp2-v1.xlsx'
 URL = 'https://cdn.elifesciences.org/articles/107180/elife-107180-supp2-v1.xlsx'
@@ -98,12 +97,12 @@ def measurement_kind(name):
 
 def load_training():
     from cftr_theratype.datasets.eti_auxiliary import load_data as load_eti_train
-    import phase27d1_biology_ablation as d1
+    from cftr_theratype.features.mutation_codes import extract_codes
     v, x, _, _, folds = load_eti_train(ROOT)
     if len(v) != 210 or v.protein_position.nunique() != 168 or len(folds) != 10:
         raise ValueError('TRAIN partition changed; expected 210 / 168 / 10 folds')
     pp = v.protein_position.to_numpy(int)
-    codes = d1.extract_codes(v, pp)
+    codes = extract_codes(v, pp)
     t = pd.DataFrame({'variant_key': v.variant_key.astype(str).to_numpy(),
                       'protein_position': pp, 'mutation': codes,
                       'corrector_rescue_pp': v.corrector_rescue_pp.to_numpy(float)})
