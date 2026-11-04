@@ -28,8 +28,8 @@ TARGETS = {"total": "vti_rescue_pp", "corrector": "corrector_rescue_pp"}
 
 
 def get_real():
-    import phase26d_corrector_bottleneck as p26d
-    d, features, _, folds, source = p26d.load_train()
+    from cftr_theratype.datasets.frozen_vti import load_train
+    d, features, _, folds, source = load_train(ROOT)
     x = np.asarray(features["sequence_structure"], float)
     if len(d) != 210 or d.protein_position.nunique() != 168 or x.shape != (210, 80):
         raise ValueError("Frozen 210/168/80 dataset mismatch")
@@ -124,9 +124,9 @@ class Problem:
         return AssayOracle(self.pos, self.y, self.base, self.train_pos)
 
     def model(self, oracle):
-        import phase26g_feature_model_ablation as p26g
+        from cftr_theratype.models.regressors import phase26g_model
         idx, values = oracle.labelled()
-        model = p26g.make_model("xgb", (2, 5.0, 180))
+        model = phase26g_model("xgb", (2, 5.0, 180))
         model.fit(self.x[idx], values)
         return model
 
