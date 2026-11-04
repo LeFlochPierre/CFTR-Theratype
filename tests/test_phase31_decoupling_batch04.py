@@ -94,4 +94,4 @@ def test_migrated_scripts_have_no_imports_from_numbered_phase_modules():
         elif isinstance(node, ast.ImportFrom):
             names.append(node.module or "")
     assert not any(name.startswith(("phase26d_", "phase26g_")) for name in names)
-    assert any(name == "phase31i_auxiliary_transfer" for name in names)
+    assert not any(name.startswith("phase") for name in names)

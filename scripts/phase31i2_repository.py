@@ -48,7 +48,13 @@ from sklearn.preprocessing import StandardScaler
 ROOT = Path.cwd()
 from cftr_theratype.datasets import frozen_vti
 from cftr_theratype.models import regressors
-import phase31i_auxiliary_transfer as auxiliary
+from cftr_theratype.datasets.assay_sources import (
+    get_sources as _canonical_get_sources,
+    protected_and_eligible_positions as _canonical_protected_and_eligible_positions,
+    load_auxiliary as _canonical_load_auxiliary,
+)
+from cftr_theratype.datasets.assay_identifiers import with_ids
+from cftr_theratype.datasets.assay_tables import agreement, permute_by_position
 
 OUT = ROOT / 'results/biology/phase31i'
 from cftr_theratype.features.assay_substitutions import (
@@ -56,6 +62,7 @@ from cftr_theratype.features.assay_substitutions import (
     mutation_features as _canonical_mutation_features,
 )
 from cftr_theratype.models.assay_teachers import make_teacher as _canonical_make_teacher
+from cftr_theratype.models.assay_teachers import crossfit_teacher_predictions as _canonical_crossfit_teacher_predictions
 
 TEACHERS = ('bihler','p289','u032','p289_s6_baseline','p289_s6_treated','u032_s6_baseline','u032_s6_treated')
 MODELS = {'M0': (), 'M1': TEACHERS[:1], 'M2': TEACHERS[:3], 'M3': TEACHERS,
@@ -72,83 +79,23 @@ def sha(path: Path) -> str:
 
 
 def get_sources(args):
-    paths = {
-        'bihler': ROOT / args.bihler,
-        's5': auxiliary.resolve_file(args.s5, 'phase31a_castellani_s5_transport.csv'),
-        's6': auxiliary.resolve_file(args.s6, 'phase31a_castellani_s6_processing.csv'),
-        'splits2024': ROOT / args.splits2024,
-        'vti_meta': ROOT / args.vti_meta,
-    }
-    for k, v in paths.items():
-        if not v.is_file():
-            raise FileNotFoundError(f'Required {k} input missing: {v}')
-    return paths
+    """Legacy API: shared root-explicit file manifest."""
+    return _canonical_get_sources(args, ROOT)
 
 
 def protected_and_eligible_positions(paths):
-    """Partition metadata only, never VTI response values."""
-    bsplit = pd.read_parquet(paths['splits2024'], columns=['variant_key','hgvs_protein','protein_position','split'])
-    if not bsplit.split.astype(str).str.lower().isin(('train','val','test')).all():
-        raise ValueError('Unknown Bihler 2024 split label')
-    bp = pd.to_numeric(bsplit.protein_position, errors='coerce')
-    bsplit = bsplit.assign(protein_position=bp)
-    pos2024_train = set(bsplit.loc[bsplit.split.astype(str).str.lower().eq('train'), 'protein_position'].dropna().astype(int))
-    pos2024_protected = set(bsplit.loc[bsplit.split.astype(str).str.lower().isin(['val','test']), 'protein_position'].dropna().astype(int))
-    if pos2024_train & pos2024_protected:
-        raise AssertionError('Bihler 2024 protein positions cross frozen split boundary')
-    # The 2026 split metadata can describe several studies, but every VAL/TEST
-    # protein position is conservatively barred from all auxiliary teacher fits.
-    vm = pd.read_parquet(paths['vti_meta'], columns=['variant_key','protein_position','transfer_split'])
-    vc = pd.to_numeric(vm.protein_position, errors='coerce')
-    vm = vm.assign(protein_position=vc)
-    if not vm.transfer_split.astype(str).str.lower().isin(('train','val','test','excluded')).all():
-        raise ValueError('Unrecognised transfer_split in 2026 VTI metadata')
-    pos2026_protected = set(vm.loc[vm.transfer_split.astype(str).str.lower().isin(['val','test']), 'protein_position'].dropna().astype(int))
-    protected = pos2024_protected | pos2026_protected
-    if not pos2024_train:
-        raise ValueError('No Bihler 2024 TRAIN protein positions')
-    print(f'Protected positions (2024 val/test union 2026 VTI val/test): {len(protected)}')
-    print(f'Bihler 2024 TRAIN positions: {len(pos2024_train)}')
-    return pos2024_train, protected
+    """Legacy API: strict protected-position metadata filtering."""
+    return _canonical_protected_and_eligible_positions(paths)
 
 
 def load_auxiliary(paths, eligible_bihler, protected):
-    bih = pd.read_parquet(paths['bihler'], columns=['variant_key','hgvs_protein','eti_rescue_pp'])
-    s5 = pd.read_csv(paths['s5'])
-    s6 = pd.read_csv(paths['s6'])
-    tables, audits = {}, []
-    for name, src, field, study in (
-        ('bihler',bih,'eti_rescue_pp',None),
-        ('p289',s5,'eti_rescue_pp','P289'),
-        ('u032',s5,'eti_rescue_pp','U032'),
-        ('p289_s6_baseline',s6,'baseline_mature_fraction','P289'),
-        ('p289_s6_treated',s6,'eti_mature_fraction','P289'),
-        ('u032_s6_baseline',s6,'baseline_mature_fraction','U032'),
-        ('u032_s6_treated',s6,'eti_mature_fraction','U032')):
-        tab, rep = auxiliary.table_aux(src, name, field, study)
-        # Canonical point mutations only. Double check no external positions
-        # from frozen protected partitions are in this data.
-        before = len(tab)
-        tab = tab.loc[~tab.pos31i2.isin(protected)].copy()
-        if name == 'bihler':
-            tab = tab.loc[tab.pos31i2.isin(eligible_bihler)].copy()
-        tab = tab.loc[tab.aa31i.map(lambda x: bool(re.fullmatch(r'[ACDEFGHIKLMNPQRSTVWY]\d{1,4}[ACDEFGHIKLMNPQRSTVWY]',x)))].copy()
-        if tab.empty:
-            raise ValueError(f'No eligible auxiliary labels for {name}; see split filtering')
-        if tab.aa31i.duplicated().any():
-            raise AssertionError(f'Duplicate exact substitution after canonicalisation: {name}')
-        assert set(tab.pos31i2.astype(int)).isdisjoint(protected)
-        tables[name] = tab.reset_index(drop=True)
-        audits.append(dict(assay=name, rows_source=rep['source_rows'],
-                           unique_substitutions_before_filter=before,
-                           substitutions_eligible=len(tab),positions_eligible=tab.pos31i2.nunique(),
-                           rows_removed_protected_or_split=before-len(tab)))
-    return tables, pd.DataFrame(audits)
+    """Legacy API: canonical auxiliary teacher source loading."""
+    return _canonical_load_auxiliary(paths, eligible_bihler, protected)
 
 
 def audit(paths, aux, coverage, eligible_bihler, protected, out):
     vt_meta = pd.read_parquet(paths['vti_meta'], columns=['variant_key','hgvs_protein','protein_position','transfer_split'])
-    vt = auxiliary.with_ids(vt_meta.loc[vt_meta.transfer_split.astype(str).str.lower().eq('train')],
+    vt = with_ids(vt_meta.loc[vt_meta.transfer_split.astype(str).str.lower().eq('train')],
                             'VTI metadata (TRAIN only)')
     vt_pos = set(vt.pos31i2.dropna().astype(int))
     vt_aa = set(vt.aa31i.dropna().astype(str))
@@ -159,7 +106,7 @@ def audit(paths, aux, coverage, eligible_bihler, protected, out):
     stat['additional_positions_vs_bihler_eti'] = stat.assay.map({k:len(set(v.pos31i2.astype(int))-all_bih) for k,v in aux.items()})
     agreements=[]
     for a,b in [('bihler','p289'),('bihler','u032'),('p289','u032')]:
-        res,_=auxiliary.agreement(aux[a],aux[b],a,b)
+        res,_=agreement(aux[a],aux[b],a,b)
         agreements.append(res)
     stat.to_csv(out/'phase31i2_repo_coverage.csv',index=False)
     pd.DataFrame(agreements).to_csv(out/'phase31i2_repo_agreement.csv',index=False)
@@ -183,38 +130,11 @@ def make_teacher(alpha):
 
 def teacher_predictions(table, train_aa, train_pos, held_aa, held_pos,
                         outer_held, alpha, negative_seed=None, inner_folds=5):
-    """No teacher sees labels at outer held positions or inner cross-fit groups."""
-    if set(table.pos31i2.astype(int)) & set(outer_held):
-        raise AssertionError('Outer held-out position in teacher data')
-    src=table.copy()
-    if negative_seed is not None:
-        src=auxiliary.permute_by_position(src,np.random.default_rng(negative_seed))
-    src_pos=src.pos31i2.astype(int).to_numpy()
-    xs=mutation_features(src.aa31i)
-    yt=src.value31i.to_numpy(float)
-    xp=mutation_features(pd.Series(train_aa))
-    xq=mutation_features(pd.Series(held_aa))
-    if len(np.unique(src_pos)) < 8:
-        raise ValueError('Too few teacher source positions')
-    k=min(inner_folds,len(np.unique(train_pos)))
-    if k<2:
-        raise ValueError('Too few VTI training positions to cross-fit')
-    oof=np.full(len(train_aa),np.nan)
-    for itr,iva in GroupKFold(n_splits=k).split(xp,groups=train_pos):
-        forbidden=set(np.asarray(train_pos)[iva].tolist()) | set(outer_held)
-        use=~np.isin(src_pos,list(forbidden))
-        if len(set(src_pos[use])) < 8:
-            raise ValueError('Too few eligible teacher positions after inner group exclusion')
-        assert not set(src_pos[use]) & forbidden
-        teacher=make_teacher(alpha)
-        teacher.fit(xs[use],yt[use])
-        oof[iva]=teacher.predict(xp[iva])
-    if not np.isfinite(oof).all():
-        raise AssertionError('Crossfit teacher left missing predictions')
-    teacher=make_teacher(alpha)
-    teacher.fit(xs,yt)
-    pred=teacher.predict(xq)
-    return oof,pred
+    """Legacy API; canonical grouped, position-leakage-safe teacher crossfit."""
+    return _canonical_crossfit_teacher_predictions(
+        table, train_aa, train_pos, held_aa, held_pos,
+        outer_held, alpha, negative_seed=negative_seed, inner_folds=inner_folds,
+    )
 
 
 def read_frozen_choices(target, folds, args):
@@ -308,7 +228,7 @@ def run(args, tables, manifest, out):
                  on='variant_key',how='left',validate='one_to_one',suffixes=('','_meta'))
     if ids.hgvs_protein.isna().any() or not (ids.protein_position==ids.protein_position_meta).all():
         raise ValueError('Cannot align Phase26D TRAIN variants and 2026 protein HGVS metadata')
-    codes=auxiliary.with_ids(ids[['variant_key','protein_position','hgvs_protein']],
+    codes=with_ids(ids[['variant_key','protein_position','hgvs_protein']],
                              'VTI TRAIN',strict=True).aa31i.to_numpy(str)
     x80=np.asarray(features['sequence_structure'],float)
     assert x80.shape==(210,80),f'Expected frozen 80 features, got {x80.shape}'
