@@ -97,9 +97,9 @@ def measurement_kind(name):
 
 
 def load_training():
-    import phase26h_auxiliary_corrector as h
+    from cftr_theratype.datasets.eti_auxiliary import load_data as load_eti_train
     import phase27d1_biology_ablation as d1
-    v, x, _, _, folds = h.load_data()
+    v, x, _, _, folds = load_eti_train(ROOT)
     if len(v) != 210 or v.protein_position.nunique() != 168 or len(folds) != 10:
         raise ValueError('TRAIN partition changed; expected 210 / 168 / 10 folds')
     pp = v.protein_position.to_numpy(int)
