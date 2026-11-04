@@ -84,7 +84,7 @@ def mutation_annotations(d):
     z=d[['variant_key','protein_position']].merge(meta[['variant_key','protein_position','hgvs_protein','variant_type']],on='variant_key',validate='one_to_one',how='left',suffixes=('','_meta'))
     if z.hgvs_protein.isna().any() or not z.protein_position.eq(z.protein_position_meta).all():
         raise ValueError('VTI TRAIN metadata not aligned with frozen positions')
-    from phase31i_auxiliary_transfer import with_ids
+    from cftr_theratype.datasets.assay_identifiers import with_ids
     a=with_ids(z[['variant_key','protein_position','hgvs_protein']],'Phase31J VTI TRAIN identifiers',strict=True)
     z['aa_code']=a.aa31i.to_numpy(str)
     def kind(code):
@@ -281,7 +281,8 @@ def teacher_diagnostics(args):
     positions,protected=phase31i.protected_and_eligible_positions(paths)
     tables,coverage=phase31i.load_auxiliary(paths,positions,protected)
     print('Phase31J TEACHERS: position-held-out internal assay CV; no VTI labels loaded')
-    from phase31i2_repository import mutation_features,make_teacher
+    from cftr_theratype.features.assay_substitutions import mutation_features
+    from cftr_theratype.models.assay_teachers import make_teacher
     oof=[];summary=[];boots=[]
     rng=np.random.default_rng(args.seed)
     for name,tab in tables.items():
