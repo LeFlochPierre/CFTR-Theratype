@@ -8,9 +8,7 @@ from sklearn.model_selection import GroupKFold
 
 sys.path.insert(0,str(Path(__file__).resolve().parent))
 import phase31j_error_diagnostics as j
-import phase26d_corrector_bottleneck as prior
-import phase31i2_repository as ph31
-import phase31i_auxiliary_transfer as aux
+from cftr_theratype.datasets import frozen_vti
 
 
 def test():
@@ -74,12 +72,14 @@ def test():
         pd.DataFrame(eti).to_csv(root/'data/processed/bihler_2024_theratyping.parquet',index=False)
         pd.DataFrame(s5).to_csv(root/'results/biology/phase31a/phase31a_castellani_s5_transport.csv',index=False)
         pd.DataFrame(s6).to_csv(root/'results/biology/phase31a/phase31a_castellani_s6_processing.csv',index=False)
-        def fake_load():return d,{},pd.DataFrame(),splits,'synthetic-frozen'
-        old_load=prior.load_train
-        old_root_j,old_root_aux,old_root_ph,old_root_prior=j.ROOT,aux.ROOT,ph31.ROOT,prior.ROOT
+        def fake_load(local_root=None):
+            assert local_root == root
+            return d,{},pd.DataFrame(),splits,'synthetic-frozen'
+        old_load=frozen_vti.load_train
+        old_root_j=j.ROOT
         pd.read_parquet=parquet_csv
-        j.ROOT=root;aux.ROOT=root;ph31.ROOT=root;prior.ROOT=root
-        prior.load_train=fake_load
+        j.ROOT=root
+        frozen_vti.load_train=fake_load
         try:
             j.main(['run','--out',str(root/'results/biology/phase31j'),'--bootstraps','100'])
             q=pd.read_csv(root/'results/biology/phase31j/phase31j_m0_annotated_oof.csv')
@@ -95,7 +95,7 @@ def test():
             print('PASS SYNTHETIC Phase31J: 210/168, two repeats, 5 folds, 7 teachers, no protected target load')
         finally:
             pd.read_parquet=orig_read
-            prior.load_train=old_load
-            j.ROOT,aux.ROOT,ph31.ROOT,prior.ROOT=old_root_j,old_root_aux,old_root_ph,old_root_prior
+            frozen_vti.load_train=old_load
+            j.ROOT=old_root_j
 
 if __name__=='__main__':test()
