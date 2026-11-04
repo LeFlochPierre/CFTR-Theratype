@@ -29,7 +29,6 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
 ROOT=Path.cwd()
-sys.path.insert(0,str(ROOT/'scripts'))
 PARQUET=ROOT/'data/processed/bihler_2026_vti.parquet'
 REFERENCE=ROOT/'results/biology/phase26h2/phase26h2_oof.csv'
 OUT=ROOT/'results/biology/phase30a'
@@ -223,8 +222,8 @@ def evaluate(df,x,folds,reference,model_factory,boot=1000):
 
 def strict_load():
     import pyarrow.parquet as pq
-    import phase26h_auxiliary_corrector as h
-    v,x,_,_,folds=h.load_data()
+    from cftr_theratype.datasets.eti_auxiliary import load_data
+    v,x,_,_,folds=load_data(ROOT)
     if len(v)!=210 or v.variant_key.nunique()!=210 or v.protein_position.nunique()!=168 or len(folds)!=10:
         raise ValueError('Frozen TRAIN cohort changed')
     keys=v.variant_key.astype(str).tolist()
@@ -251,7 +250,7 @@ def strict_load():
         raise ValueError('Frozen OOF missing/invalid required columns')
     if set(ref.variant_key)!=set(keys) or set(ref.repeat.unique())!={1,2}:
         raise ValueError('Frozen OOF variant/repeat mismatch')
-    return df,np.asarray(x,float),folds,ref,h
+    return df,np.asarray(x,float),folds,ref
 
 
 def association_table(df):
@@ -273,7 +272,9 @@ def association_table(df):
 
 
 def run(args):
-    df,x,folds,ref,h=strict_load()
+    from cftr_theratype.models.regressors import phase26d_model
+    from cftr_theratype.models.auxiliary import SPEC as FROZEN_XGB_SPEC
+    df,x,folds,ref=strict_load()
     identities=audit_assay(df)
     print('='*113)
     print('PHASE 30A | VTI TARGET DEFINITIONS / BIOLOGICAL INFORMATION LADDER | TRAIN ONLY')
@@ -299,7 +300,7 @@ def run(args):
                    (asc.outcome_a=='corrector') & asc.outcome_b.isin(['total_rescue','treated_absolute'])]
     print(wanted.round(3).to_string(index=False))
     print('\nD. SAME-FOLD INFORMATION LADDER — fitting locked algorithm parameters')
-    out,metrics,paired,qc=evaluate(df,x,folds,ref,lambda:h.previous.model(h.SPEC),boot=args.bootstraps)
+    out,metrics,paired,qc=evaluate(df,x,folds,ref,lambda:phase26d_model(FROZEN_XGB_SPEC),boot=args.bootstraps)
     print('\nE. GROUPED OOF MAE BY TARGET AND INFORMATION STAGE')
     print(metrics.round(4).to_string(index=False))
     print('\nF. ADDITIONAL ASSAY INFORMATION VS MUTATION-ONLY (positive gain=better)')
