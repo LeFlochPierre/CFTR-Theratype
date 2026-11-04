@@ -15,8 +15,8 @@ from sklearn.linear_model import Ridge
 
 sys.path.insert(0, str(Path.cwd() / "scripts"))
 
-import phase26d_corrector_bottleneck as p26d
-import phase26g_feature_model_ablation as p26g
+from cftr_theratype.datasets.frozen_vti import load_train as load_vti_train
+from cftr_theratype.models.regressors import phase26g_model
 from cftr_theratype.features.regions import domains_from_file, domain_of
 from cftr_theratype.evaluation.historical_oof import load_m0
 
@@ -44,7 +44,7 @@ def score(y, pred, pos):
 
 
 def source():
-    d, matrices, _, folds, ref = p26d.load_train()
+    d, matrices, _, folds, ref = load_vti_train(Path.cwd())
     oof, _ = load_m0(d, root=Path.cwd())
 
     X = np.asarray(matrices["sequence_structure"], float)
@@ -293,7 +293,7 @@ def curves(d, X, folds, oof, quick=False, draws=3):
                             pred = fit.predict(X[iv])
 
                         elif model == "xgb80_fixed":
-                            fit = p26g.make_model(
+                            fit = phase26g_model(
                                 "xgb", (2, 5.0, 180)
                             )
                             fit.fit(X[tr], y[tr])
