@@ -23,7 +23,6 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
 ROOT = Path.cwd()
-sys.path.insert(0, str(ROOT / "scripts"))
 
 OUT = ROOT / "results/biology/phase30c"
 ETI_CSV = ROOT / "results/biology/phase24g/phase24g_threshold_robustness.csv"
@@ -125,9 +124,9 @@ def fit_ridge(X_train, y_train, X_test):
 
 
 def load_matched_data():
-    import phase26h_auxiliary_corrector as h
+    from cftr_theratype.datasets.eti_auxiliary import load_data
 
-    v, X80, _, _, folds = h.load_data()
+    v, X80, _, _, folds = load_data(ROOT)
 
     if (
         len(v) != 210
@@ -335,7 +334,7 @@ def load_matched_data():
         [index[k] for k in data.variant_key]
     ]
 
-    return data, X, folds, h
+    return data, X, folds
 
 
 def evaluate(data, X, folds, factory):
@@ -782,7 +781,9 @@ def main():
 
     self_test()
 
-    data, X, folds, h = load_matched_data()
+    from cftr_theratype.models.regressors import phase26d_model
+    from cftr_theratype.models.auxiliary import SPEC as FROZEN_XGB_SPEC
+    data, X, folds = load_matched_data()
 
     print("=" * 112)
     print("PHASE 30C | ETI -> VTI INCREMENTAL INFORMATION")
@@ -821,7 +822,7 @@ def main():
         data,
         X,
         folds,
-        lambda: h.previous.model(h.SPEC),
+        lambda: phase26d_model(FROZEN_XGB_SPEC),
     )
 
     metrics, gains = metrics_and_gains(
