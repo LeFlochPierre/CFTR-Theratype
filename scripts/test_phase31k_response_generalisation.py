@@ -13,9 +13,8 @@ from xgboost import XGBRegressor
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import phase31k_response_generalisation as k
-import phase31j_error_diagnostics as j
-import phase26d_corrector_bottleneck as prior
-import phase26g_feature_model_ablation as p26g
+from cftr_theratype.datasets import frozen_vti
+from cftr_theratype.models import regressors
 
 
 def test():
@@ -60,13 +59,13 @@ def test():
             pd.DataFrame(sel[target]).to_csv(root/f'results/biology/phase26g/phase26g_{target}_selected.csv',index=False)
         pd.DataFrame(stacked).to_csv(root/'results/biology/phase31i/phase31i2_repo_oof.csv',index=False)
         pd.DataFrame(historical).to_csv(root/'results/biology/phase26d/phase26d_oof.csv',index=False)
-        original=(k.ROOT,k.OUT,j.ROOT,prior.ROOT,prior.load_train,p26g.make_model)
-        def fake_load():return d, {'sequence_structure':X},pd.DataFrame(),splits,'synthetic-frozen'
-        def fast_model(kind,spec):
+        original=(k.ROOT,k.OUT,frozen_vti.load_train,regressors.phase26g_model)
+        def fake_load(root=None):return d, {'sequence_structure':X},pd.DataFrame(),splits,'synthetic-frozen'
+        def fast_model(kind,spec,topk=None):
             return Pipeline([('regression',XGBRegressor(n_estimators=12,max_depth=2,learning_rate=.1,
                 objective='reg:squarederror',tree_method='hist',n_jobs=1,random_state=3117))])
-        k.ROOT=root;k.OUT=root/'results/biology/phase31k';j.ROOT=root;prior.ROOT=root
-        prior.load_train=fake_load;p26g.make_model=fast_model
+        k.ROOT=root;k.OUT=root/'results/biology/phase31k'
+        frozen_vti.load_train=fake_load;regressors.phase26g_model=fast_model
         try:
             k.main(['analyze','--bootstraps','100'])
             a=pd.read_csv(root/'results/biology/phase31k/phase31k_calibration_bins.csv')
@@ -93,7 +92,7 @@ def test():
             assert len(rv)==4
             print('PASS synthetic Phase31K: analysis, exact MSE identity, quick/full nested tail models, 210/168, 2x5 folds')
         finally:
-            (k.ROOT,k.OUT,j.ROOT,prior.ROOT,prior.load_train,p26g.make_model)=original
+            (k.ROOT,k.OUT,frozen_vti.load_train,regressors.phase26g_model)=original
 
 
 if __name__=='__main__':test()
