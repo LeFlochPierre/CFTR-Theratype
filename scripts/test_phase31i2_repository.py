@@ -73,7 +73,6 @@ def test():
         pd.read_parquet=read_parquet_fake
         m.ROOT=root
         m.OUT=root/'results/biology/phase31i'
-        m.auxiliary.ROOT=root
         old_train=m.frozen_vti.load_train
         m.frozen_vti.load_train=fake_train
         # Fast XGBoost parity reference from PRESELECTED Phase26G spec.
