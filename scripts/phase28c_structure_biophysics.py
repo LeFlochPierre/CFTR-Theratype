@@ -246,12 +246,14 @@ def self_test():
 
 
 def run(args):
-    import phase26h_auxiliary_corrector as h
-    import phase27d1_biology_ablation as d1
+    from cftr_theratype.datasets.eti_auxiliary import load_data
+    from cftr_theratype.features.mutation_codes import extract_codes
+    from cftr_theratype.models.regressors import phase26d_model
+    from cftr_theratype.models.auxiliary import SPEC as FROZEN_XGB_SPEC
     import phase27d3b_structure_ablation as d3
     if not FROZEN.is_file():raise FileNotFoundError(f'Missing frozen OOF: {FROZEN}')
     d3.verify_provenance()
-    v,x80,_,_,folds=h.load_data()     # TRAIN partition only
+    v,x80,_,_,folds=load_data(ROOT)     # TRAIN partition only
     xx=np.asarray(x80,float); pp=v.protein_position.to_numpy(int)
     keys=v.variant_key.astype(str).to_numpy(); yc=v.corrector_rescue_pp.to_numpy(float)
     yt=v.vti_rescue_pp.to_numpy(float)
@@ -259,7 +261,7 @@ def run(args):
         raise ValueError('Frozen VTI TRAIN or outer-fold metadata changed')
     if not np.isfinite(xx[:,:68]).all() or np.isinf(xx).any():
         raise ValueError('Invalid original sequence/structural feature values')
-    code=d1.extract_codes(v,pp)
+    code=extract_codes(v,pp)
     canonical=str(read_sequence(str(PDB_ROOT/'P13569.fasta'),'fasta').seq).upper()
     if len(canonical)!=N:raise ValueError('Unexpected UniProt P13569 sequence length')
     for c,p in zip(code,pp):
@@ -323,7 +325,7 @@ def run(args):
         fits={}
         for name,matrix in configs.items():
             a=np.column_stack([matrix,np.ones(len(matrix))])
-            mdl=h.previous.model(h.SPEC)
+            mdl=phase26d_model(FROZEN_XGB_SPEC)
             mdl.fit(a[tr],yc[tr])
             fits[name]=np.asarray(mdl.predict(a[te]),float)
         diff=float(np.max(np.abs(fits['global']-s.vti_fixed.to_numpy(float))))

@@ -24,7 +24,6 @@ import pandas as pd
 from sklearn.metrics import average_precision_score, roc_auc_score
 
 ROOT = Path.cwd()
-sys.path.insert(0, str(ROOT / 'scripts'))
 FOLDX = ROOT / 'results/biology/phase28e/phase28e4/phase28e4_foldx_mutation_energies.csv'
 MANIFEST = ROOT / 'results/biology/phase28e/phase28e1_foldx_mutation_manifest.csv'
 FROZEN = ROOT / 'results/biology/phase26h2/phase26h2_oof.csv'
@@ -189,9 +188,11 @@ def self_test():
 
 
 def run(args):
-    import phase26h_auxiliary_corrector as h
-    import phase27d1_biology_ablation as d1
-    v,x80,_,_,folds=h.load_data()
+    from cftr_theratype.datasets.eti_auxiliary import load_data
+    from cftr_theratype.features.mutation_codes import extract_codes
+    from cftr_theratype.models.regressors import phase26d_model
+    from cftr_theratype.models.auxiliary import SPEC as FROZEN_XGB_SPEC
+    v,x80,_,_,folds=load_data(ROOT)
     keys=v.variant_key.astype(str).to_numpy()
     pp=v.protein_position.to_numpy(int)
     x=np.asarray(x80,float)
@@ -201,7 +202,7 @@ def run(args):
         raise ValueError('Frozen cohort/folds changed')
     if not np.isfinite(x[:,:68]).all() or np.isinf(x).any():
         raise ValueError('Invalid baseline sequence features')
-    muts=d1.extract_codes(v,pp)
+    muts=extract_codes(v,pp)
     feat,subset=load_foldx(muts,pp)
     dmodels={name:(x if name=='global' else np.column_stack([x,feat[cols].to_numpy(float)]))
              for name,cols in subset.items()}
@@ -251,7 +252,7 @@ def run(args):
         preds={}
         for name,arr in dmodels.items():
             a=np.column_stack([arr,np.ones(len(arr))])
-            mdl=h.previous.model(h.SPEC)
+            mdl=phase26d_model(FROZEN_XGB_SPEC)
             mdl.fit(a[tr],yc[tr])
             preds[name]=np.asarray(mdl.predict(a[te]),float)
         parity=float(np.max(np.abs(preds['global']-ref.vti_fixed.to_numpy(float))))
