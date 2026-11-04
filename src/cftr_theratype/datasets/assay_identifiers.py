@@ -73,5 +73,3 @@ def with_ids(df: pd.DataFrame, name: str, strict: bool = False) -> pd.DataFrame:
         bad = d[d.aa31i.isna() | d.pos31i2.isna() | d.control31i]
         raise ValueError(f"{name}: {len(bad)} VTI rows lack missense substitution, position, or are controls")
     return d
-
-
