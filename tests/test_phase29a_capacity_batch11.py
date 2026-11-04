@@ -139,8 +139,15 @@ def test_all_five_models_match_independent_original_predictions():
         current = canonical.fit_predict(config, x_train.copy(), y, x_test.copy())
         wrapper = legacy.fit_predict(old_h, config, x_train.copy(), y, x_test.copy())
         for original_arr, current_arr, wrapped_arr in zip(original, current, wrapper):
-            np.testing.assert_array_equal(original_arr, current_arr)
-            np.testing.assert_array_equal(original_arr, wrapped_arr)
+            # Repeated parallel XGBoost fits may differ by floating-point
+            # rounding (<1e-13 pp observed on RTX6). Require tight numerical
+            # parity rather than bitwise identity between independent fits.
+            np.testing.assert_allclose(
+                original_arr, current_arr, rtol=1e-12, atol=1e-10,
+            )
+            np.testing.assert_allclose(
+                original_arr, wrapped_arr, rtol=1e-12, atol=1e-10,
+            )
         assert current[0].shape == (36,) and current[1].shape == (9,)
 
 
