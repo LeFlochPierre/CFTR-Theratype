@@ -61,19 +61,19 @@ PYTHONPATH="$PWD/src" python -m pytest -q \
   tests/test_phase27d3a_provenance_batch12.py \
   tests/test_phase29a_capacity_batch11.py
 
-PYTHONPATH="$PWD/src" python scripts/phase26k2_numeric_audit.py --self-test
+PYTHONPATH="$PWD/src" python -c \
+'\''import sys; sys.path.insert(0, "scripts"); \
+import phase26k2_numeric_audit as k2; k2.self_test()'\''
 PYTHONPATH="$PWD/src" python scripts/phase27e1_mixture_of_experts.py --self-test
 
 PYTHONPATH="$PWD/src" python -m pytest -q -rs tests/
 git diff --check origin/main...HEAD
 ```
 
-**Note:** Phase26K-2 historically has no CLI `--self-test`;
-its conservative `self_test()` function must instead be called
-through a one-line Python import. See corrected commands in the PR,
-which are authoritative. Likewise, do not execute its plain
-script from the clean worktree: doing so requires the real Tedman
-workbook and protected TRAIN-only inputs.
+**Note:** Phase26K-2 historically has no CLI `--self-test`.
+The command above calls its existing self-test directly without running
+the full script. Do not execute the plain script from the clean worktree:
+doing so would require the real Tedman workbook and TRAIN-only inputs.
 
 As in earlier batches, a single skipped
 `test_frozen_loader_parity.py` is expected in a clean worktree
