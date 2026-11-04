@@ -19,10 +19,6 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import average_precision_score
 
-ROOT = Path.cwd()
-REFERENCE = ROOT/'results/biology/phase26h2/phase26h2_oof.csv'
-OUT = ROOT/'results/biology/phase29a'
-KEY = ['repeat','fold','variant_key','protein_position']
 # Re-export canonical fixed configurations for the historical CLI.
 from cftr_theratype.models.response_capacity import (
     CONFIGS,
@@ -39,6 +35,12 @@ from cftr_theratype.evaluation.response_capacity import (
 )
 from cftr_theratype.models.regressors import phase26d_model
 from cftr_theratype.models.auxiliary import SPEC
+
+
+ROOT = Path.cwd()
+REFERENCE = ROOT/'results/biology/phase26h2/phase26h2_oof.csv'
+OUT = ROOT/'results/biology/phase29a'
+KEY = ['repeat','fold','variant_key','protein_position']
 
 
 def sha(path):
