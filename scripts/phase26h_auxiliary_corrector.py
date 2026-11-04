@@ -17,10 +17,7 @@ import pandas as pd
 from sklearn.model_selection import GroupKFold
 
 ROOT = Path.cwd()
-sys.path.insert(0, str(ROOT / "scripts"))
-sys.path.insert(0, str(ROOT / "src"))
-
-import phase26d_corrector_bottleneck as previous
+from cftr_theratype.evaluation.metrics import position_mae
 
 OUT = ROOT / "results/biology/phase26h"
 WEIGHTS = (0.25, 0.5, 1.0)
@@ -333,7 +330,7 @@ def report(out, choices, nboot, shuffles):
                     "repeat": rep,
                     "target": target,
                     "model": name,
-                    "position_mae_pp": previous.pos_mae(
+                    "position_mae_pp": position_mae(
                         y, pred, pos
                     ),
                     "variant_mae_pp": float(
