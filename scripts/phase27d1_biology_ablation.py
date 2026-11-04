@@ -19,7 +19,6 @@ import pandas as pd
 from sklearn.metrics import average_precision_score, roc_auc_score
 
 ROOT = Path.cwd()
-sys.path.insert(0, str(ROOT / 'scripts'))
 OUT = ROOT / 'results/biology/phase27d'
 PRIOR = ROOT / 'results/biology/phase27b/phase27b1_repeated_oof.csv'
 
@@ -64,7 +63,7 @@ def annotation_features(positions, codes):
     return shared(positions, codes)
 
 def extract_codes(frame, pp):
-    from phase26k_trafficking_preflight import mutation_code
+    from cftr_theratype.features.mutation_codes import mutation_code
     candidates = [c for c in ('mutation', 'hgvs_protein', 'protein_change',
                               'variant_key') if c in frame.columns]
     for column in candidates:
@@ -96,9 +95,10 @@ def evaluation(y, scores):
 
 
 def run(nboot):
-    import phase26h_auxiliary_corrector as h
-    import phase27b1_extreme_classifiers as b
-    v, X80, _, _, folds = h.load_data()
+    from cftr_theratype.datasets.eti_auxiliary import load_data
+    from cftr_theratype.models.responder_classifiers import make_model
+    from cftr_theratype.evaluation.responder_classification import ap_gain_bootstrap
+    v, X80, _, _, folds = load_data(ROOT)
     X80 = np.asarray(X80, float)
     pp = v.protein_position.to_numpy(int)
     keys = v.variant_key.astype(str).to_numpy()
@@ -152,7 +152,7 @@ def run(nboot):
                     pred = baseline
                 else:
                     XX = np.column_stack([base_matrix, groups[config].to_numpy(float)])
-                    fitted = b.make_model(algorithm, ytr,
+                    fitted = make_model(algorithm, ytr,
                                           27000 + task_idx * 100 + fold_id)
                     fitted.fit(XX[tr], ytr)
                     pred = fitted.predict_proba(XX[te])[:, 1]
@@ -194,7 +194,7 @@ def run(nboot):
             print(f"  {config:13s}: AP={m['ap']:.4f} AUROC={m['auroc']:.4f} "
                   f"top42={m['top20_hits']}/{m['positives']}")
             if config != 'baseline':
-                bres = b.ap_gain_bootstrap(wide, 'baseline', config, nboot,
+                bres = ap_gain_bootstrap(wide, 'baseline', config, nboot,
                                            seed=27800 + len(comparisons))
                 comparisons.append({'task':task,'config':config,**bres})
     metrics = pd.DataFrame(metrics)

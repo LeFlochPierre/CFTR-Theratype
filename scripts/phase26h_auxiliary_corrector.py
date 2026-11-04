@@ -17,17 +17,18 @@ import pandas as pd
 from sklearn.model_selection import GroupKFold
 
 ROOT = Path.cwd()
-sys.path.insert(0, str(ROOT / "scripts"))
-sys.path.insert(0, str(ROOT / "src"))
+from types import SimpleNamespace
+from cftr_theratype.evaluation.metrics import position_mae
+from cftr_theratype.models.regressors import phase26d_model
+from cftr_theratype.models.auxiliary import (
+    WEIGHTS, SPEC,
+)
 
-import phase26d_corrector_bottleneck as previous
+# Compatibility for historical scripts calling h.previous.model(h.SPEC).
+# The scientific implementation now lives only in cftr_theratype.
+previous = SimpleNamespace(model=phase26d_model, pos_mae=position_mae)
 
 OUT = ROOT / "results/biology/phase26h"
-WEIGHTS = (0.25, 0.5, 1.0)
-
-# Fixed from earlier training-only experiments.
-SPEC = (2, 5.0, 180)
-
 
 def parsed_position(s):
     from cftr_theratype.datasets.eti_auxiliary import parsed_position as shared
@@ -333,7 +334,7 @@ def report(out, choices, nboot, shuffles):
                     "repeat": rep,
                     "target": target,
                     "model": name,
-                    "position_mae_pp": previous.pos_mae(
+                    "position_mae_pp": position_mae(
                         y, pred, pos
                     ),
                     "variant_mae_pp": float(

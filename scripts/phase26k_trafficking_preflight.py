@@ -15,61 +15,27 @@ ROOT = Path.cwd()
 BOOK = ROOT / "data/external/tedman2025/cftr_expression.xlsx"
 OUT = ROOT / "results/biology/phase26k"
 
-AA = dict(zip(
-    [
-        "Ala", "Arg", "Asn", "Asp", "Cys",
-        "Glu", "Gln", "Gly", "His", "Ile",
-        "Leu", "Lys", "Met", "Phe", "Pro",
-        "Ser", "Thr", "Trp", "Tyr", "Val"
-    ],
-    list("ARNDCEQGHILKMFPSTWYV")
-))
-
-ALLOWED = set(AA.values())
-
-PATTERN = re.compile(
-    r"(?<![A-Za-z0-9])(?:p\.)?"
-    r"([A-Za-z]{3}|[A-Za-z])"
-    r"([1-9]\d{0,3})"
-    r"([A-Za-z]{3}|[A-Za-z])"
-    r"(?=$|[^A-Za-z0-9])",
-    re.I
+from cftr_theratype.features.mutation_codes import (
+    AA, ALLOWED, PATTERN,
+    aa_symbol as _canonical_aa_symbol,
+    mutation_code as _canonical_mutation_code,
+    position_from_code as _canonical_position_from_code,
 )
 
 
 def aa_symbol(token):
-    if len(token) == 1:
-        return (
-            token.upper()
-            if token.upper() in ALLOWED
-            else None
-        )
-    return AA.get(token.capitalize())
+    """Legacy API: canonical amino acid abbreviation parser."""
+    return _canonical_aa_symbol(token)
 
 
 def mutation_code(value):
-    if pd.isna(value):
-        return None
-
-    for m in PATTERN.finditer(str(value).strip()):
-        a = aa_symbol(m.group(1))
-        b = aa_symbol(m.group(3))
-        pos = int(m.group(2))
-
-        if a and b and a != b and 1 <= pos <= 1480:
-            return f"{a}{pos}{b}"
-
-    return None
+    """Legacy API: canonical free-text CFTR substitution parser."""
+    return _canonical_mutation_code(value)
 
 
 def position_from_code(code):
-    if not isinstance(code, str):
-        return np.nan
-
-    m = re.fullmatch(
-        r"[A-Z]([0-9]{1,4})[A-Z]", code
-    )
-    return int(m.group(1)) if m else np.nan
+    """Legacy API: canonical substitution position parser."""
+    return _canonical_position_from_code(code)
 
 
 def load_allowed():

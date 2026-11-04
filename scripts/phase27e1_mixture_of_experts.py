@@ -294,8 +294,8 @@ def self_test():
 
 
 def main(nboot):
-    import phase26h_auxiliary_corrector as h
-    v,X,_,_,folds=h.load_data()
+    from cftr_theratype.datasets.eti_auxiliary import load_data as load_eti_train
+    v,X,_,_,folds=load_eti_train(ROOT)
     X=np.asarray(X,float)
     keys=v.variant_key.astype(str).to_numpy()
     pp=v.protein_position.to_numpy(int)

@@ -26,7 +26,6 @@ from sklearn.metrics import (
 from xgboost import XGBClassifier
 
 ROOT = Path.cwd()
-sys.path.insert(0, str(ROOT / "scripts"))
 
 OUT = ROOT / "results/biology/phase27b"
 BASE = OUT / "phase27b1_repeated_oof.csv"
@@ -330,11 +329,12 @@ def load_binary_oof():
 
 
 def run(nboot):
-    import phase26h_auxiliary_corrector as h
+    from cftr_theratype.datasets.eti_auxiliary import load_data as load_eti_train
+
 
     OUT.mkdir(parents=True, exist_ok=True)
 
-    v, X, _, _, folds = h.load_data()
+    v, X, _, _, folds = load_eti_train(ROOT)
 
     X = np.asarray(X, float)
     vk = v.variant_key.astype(str).to_numpy()

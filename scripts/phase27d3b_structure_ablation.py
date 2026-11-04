@@ -197,7 +197,7 @@ def self_test():
 
 
 def run(n_decoys, nboot):
-    import phase26h_auxiliary_corrector as h
+    from cftr_theratype.datasets.eti_auxiliary import load_data as load_eti_train
     import phase27b1_extreme_classifiers as b
     import phase27d1_biology_ablation as d1
 
@@ -205,7 +205,7 @@ def run(n_decoys, nboot):
     geometry = load_geometry()
     if not FROZEN.is_file():
         raise FileNotFoundError(f'Run Phase 27D-1 first: {FROZEN}')
-    v, x80, _, _, folds = h.load_data()
+    v, x80, _, _, folds = load_eti_train(ROOT)
     x80 = np.asarray(x80, float)
     pp = v.protein_position.to_numpy(int)
     keys = v.variant_key.astype(str).to_numpy()
