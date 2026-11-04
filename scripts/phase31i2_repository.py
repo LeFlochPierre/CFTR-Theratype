@@ -53,7 +53,8 @@ from cftr_theratype.datasets.assay_sources import (
     protected_and_eligible_positions as _canonical_protected_and_eligible_positions,
     load_auxiliary as _canonical_load_auxiliary,
 )
-import phase31i_auxiliary_transfer as auxiliary
+from cftr_theratype.datasets.assay_identifiers import with_ids
+from cftr_theratype.datasets.assay_tables import agreement, permute_by_position
 
 OUT = ROOT / 'results/biology/phase31i'
 from cftr_theratype.features.assay_substitutions import (
@@ -93,7 +94,7 @@ def load_auxiliary(paths, eligible_bihler, protected):
 
 def audit(paths, aux, coverage, eligible_bihler, protected, out):
     vt_meta = pd.read_parquet(paths['vti_meta'], columns=['variant_key','hgvs_protein','protein_position','transfer_split'])
-    vt = auxiliary.with_ids(vt_meta.loc[vt_meta.transfer_split.astype(str).str.lower().eq('train')],
+    vt = with_ids(vt_meta.loc[vt_meta.transfer_split.astype(str).str.lower().eq('train')],
                             'VTI metadata (TRAIN only)')
     vt_pos = set(vt.pos31i2.dropna().astype(int))
     vt_aa = set(vt.aa31i.dropna().astype(str))
@@ -104,7 +105,7 @@ def audit(paths, aux, coverage, eligible_bihler, protected, out):
     stat['additional_positions_vs_bihler_eti'] = stat.assay.map({k:len(set(v.pos31i2.astype(int))-all_bih) for k,v in aux.items()})
     agreements=[]
     for a,b in [('bihler','p289'),('bihler','u032'),('p289','u032')]:
-        res,_=auxiliary.agreement(aux[a],aux[b],a,b)
+        res,_=agreement(aux[a],aux[b],a,b)
         agreements.append(res)
     stat.to_csv(out/'phase31i2_repo_coverage.csv',index=False)
     pd.DataFrame(agreements).to_csv(out/'phase31i2_repo_agreement.csv',index=False)
@@ -133,7 +134,7 @@ def teacher_predictions(table, train_aa, train_pos, held_aa, held_pos,
         raise AssertionError('Outer held-out position in teacher data')
     src=table.copy()
     if negative_seed is not None:
-        src=auxiliary.permute_by_position(src,np.random.default_rng(negative_seed))
+        src=permute_by_position(src,np.random.default_rng(negative_seed))
     src_pos=src.pos31i2.astype(int).to_numpy()
     xs=mutation_features(src.aa31i)
     yt=src.value31i.to_numpy(float)
@@ -253,7 +254,7 @@ def run(args, tables, manifest, out):
                  on='variant_key',how='left',validate='one_to_one',suffixes=('','_meta'))
     if ids.hgvs_protein.isna().any() or not (ids.protein_position==ids.protein_position_meta).all():
         raise ValueError('Cannot align Phase26D TRAIN variants and 2026 protein HGVS metadata')
-    codes=auxiliary.with_ids(ids[['variant_key','protein_position','hgvs_protein']],
+    codes=with_ids(ids[['variant_key','protein_position','hgvs_protein']],
                              'VTI TRAIN',strict=True).aa31i.to_numpy(str)
     x80=np.asarray(features['sequence_structure'],float)
     assert x80.shape==(210,80),f'Expected frozen 80 features, got {x80.shape}'
