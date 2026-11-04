@@ -11,7 +11,6 @@ of physically separating baseline and VTI assays is NOT established.
 """
 from __future__ import annotations
 import argparse
-import sys
 from pathlib import Path
 import numpy as np
 import pandas as pd
@@ -22,7 +21,6 @@ from sklearn.linear_model import Ridge
 from sklearn.preprocessing import StandardScaler
 
 ROOT = Path.cwd()
-sys.path.insert(0, str(ROOT / "scripts"))
 OUT = ROOT / "results/biology/phase32a"
 TARGETS = {"total": "vti_rescue_pp", "corrector": "corrector_rescue_pp"}
 
@@ -40,8 +38,8 @@ def get_real():
     esm = None
     scorepath = ROOT / "results/biology/phase31m/esmrank_output/phase31m_esmrank_input/predictions.csv"
     if scorepath.exists():
-        from phase31m_three_tracks import get_data, load_esm
-        aligned, _, _, meta = get_data()
+        from cftr_theratype.experiments.three_tracks_inputs import get_data, load_esm
+        aligned, _, _, meta = get_data(ROOT)
         if not aligned.variant_key.astype(str).equals(d.variant_key.astype(str)):
             raise ValueError("ESMRank VTI TRAIN order mismatch")
         scores = load_esm(scorepath)
