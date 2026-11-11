@@ -33,7 +33,7 @@ def test_phase28_30_no_longer_import_phase26h_or_phase27d1():
         "archive/legacy/scripts/phase28c_structure_biophysics.py",
         "archive/legacy/scripts/phase28e5_foldx_predictive_ablation.py",
         "archive/legacy/scripts/phase30a_target_information_ladder.py",
-        "scripts/phase30c_eti_incremental_ladder.py",
+        "archive/legacy/scripts/phase30c_eti_incremental_ladder.py",
     ):
         modules = _module_imports(path)
         assert "phase26h_auxiliary_corrector" not in modules, path
@@ -54,7 +54,7 @@ def test_phase28_30_no_longer_import_phase26h_or_phase27d1():
     for path in (
         "archive/legacy/scripts/phase28e5_foldx_predictive_ablation.py",
         "archive/legacy/scripts/phase30a_target_information_ladder.py",
-        "scripts/phase30c_eti_incremental_ladder.py",
+        "archive/legacy/scripts/phase30c_eti_incremental_ladder.py",
     ):
         modules = _module_imports(path)
         assert not any(name.startswith("phase") for name in modules), (path, modules)
