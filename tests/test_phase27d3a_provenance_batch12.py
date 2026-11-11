@@ -90,7 +90,7 @@ def test_missing_provenance_fails_without_network_or_patient_data(tmp_path):
 
 
 def test_phase28c_no_longer_imports_numbered_modules_or_scripts_path():
-    path = ROOT / "scripts/phase28c_structure_biophysics.py"
+    path = ROOT / "archive/legacy/scripts/phase28c_structure_biophysics.py"
     tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
     imports = []
     for node in ast.walk(tree):
