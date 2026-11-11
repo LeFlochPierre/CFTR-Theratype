@@ -30,9 +30,9 @@ def _module_imports(path: str) -> list[str]:
 
 def test_phase28_30_no_longer_import_phase26h_or_phase27d1():
     for path in (
-        "scripts/phase28c_structure_biophysics.py",
+        "archive/legacy/scripts/phase28c_structure_biophysics.py",
         "archive/legacy/scripts/phase28e5_foldx_predictive_ablation.py",
-        "scripts/phase30a_target_information_ladder.py",
+        "archive/legacy/scripts/phase30a_target_information_ladder.py",
         "scripts/phase30c_eti_incremental_ladder.py",
     ):
         modules = _module_imports(path)
@@ -53,7 +53,7 @@ def test_phase28_30_no_longer_import_phase26h_or_phase27d1():
 
     for path in (
         "archive/legacy/scripts/phase28e5_foldx_predictive_ablation.py",
-        "scripts/phase30a_target_information_ladder.py",
+        "archive/legacy/scripts/phase30a_target_information_ladder.py",
         "scripts/phase30c_eti_incremental_ladder.py",
     ):
         modules = _module_imports(path)
