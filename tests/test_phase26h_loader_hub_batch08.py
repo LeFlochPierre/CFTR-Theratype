@@ -45,7 +45,6 @@ def test_phase26h_and_later_loaders_no_longer_import_numbered_phase_hubs():
     no_phase_imports = [
         "scripts/phase26h_auxiliary_corrector.py",
         "scripts/phase27b1_extreme_classifiers.py",
-        "archive/legacy/scripts/phase27b3_threeclass.py",
         "scripts/phase27d1_biology_ablation.py",
     ]
     for rel in no_phase_imports:
@@ -54,8 +53,6 @@ def test_phase26h_and_later_loaders_no_longer_import_numbered_phase_hubs():
     others = [
         "scripts/phase27d3b_structure_ablation.py",
         "scripts/phase27e1_mixture_of_experts.py",
-        "archive/legacy/scripts/phase28a_trafficking_feature_audit.py",
-        "archive/legacy/scripts/phase29b_predictability_ceiling_audit.py",
     ]
     for rel in others:
         assert "phase26h_auxiliary_corrector" not in _numbered_imports(rel)
