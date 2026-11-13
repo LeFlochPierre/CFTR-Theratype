@@ -1,12 +1,10 @@
-"""Synthetic-only parity guards for Phase28 and Phase30 dependency cleanup.
+"""Synthetic-only parity guards for the frozen Phase26H/26D model specification.
 
-These checks never load VTI TRAIN, VAL, or TEST data. Historical reference
-products remain untouched; real-data parity must be checked separately.
+These checks verify retained canonical factory compatibility without accessing
+VTI TRAIN, VAL, or TEST outcome data.
 """
 from __future__ import annotations
 
-import ast
-from pathlib import Path
 
 import numpy as np
 
@@ -14,50 +12,9 @@ from cftr_theratype.models.auxiliary import SPEC
 from cftr_theratype.models.regressors import phase26d_model
 
 
+from pathlib import Path
+
 ROOT = Path(__file__).resolve().parents[1]
-
-
-def _module_imports(path: str) -> list[str]:
-    tree = ast.parse((ROOT / path).read_text(encoding="utf-8"), filename=path)
-    imports = []
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Import):
-            imports.extend(alias.name for alias in node.names)
-        elif isinstance(node, ast.ImportFrom):
-            imports.append(node.module or "")
-    return imports
-
-
-def test_phase28_30_no_longer_import_phase26h_or_phase27d1():
-    for path in (
-        "archive/legacy/scripts/phase28c_structure_biophysics.py",
-        "archive/legacy/scripts/phase28e5_foldx_predictive_ablation.py",
-        "archive/legacy/scripts/phase30a_target_information_ladder.py",
-        "archive/legacy/scripts/phase30c_eti_incremental_ladder.py",
-    ):
-        modules = _module_imports(path)
-        assert "phase26h_auxiliary_corrector" not in modules, path
-        assert "phase27d1_biology_ablation" not in modules, path
-        tree = ast.parse((ROOT / path).read_text(encoding="utf-8"))
-        # Named legacy aliases should not survive as runtime calls.
-        for node in ast.walk(tree):
-            if not isinstance(node, ast.Attribute):
-                continue
-            if isinstance(node.value, ast.Name):
-                assert not (
-                    node.value.id == "h" and node.attr in ("load_data", "previous", "SPEC")
-                ), path
-        assert "cftr_theratype.datasets.eti_auxiliary" in modules, path
-        assert "cftr_theratype.models.regressors" in modules, path
-        assert "cftr_theratype.models.auxiliary" in modules, path
-
-    for path in (
-        "archive/legacy/scripts/phase28e5_foldx_predictive_ablation.py",
-        "archive/legacy/scripts/phase30a_target_information_ladder.py",
-        "archive/legacy/scripts/phase30c_eti_incremental_ladder.py",
-    ):
-        modules = _module_imports(path)
-        assert not any(name.startswith("phase") for name in modules), (path, modules)
 
 
 def test_frozen_xgb_factory_matches_original_phase26h_compatibility():

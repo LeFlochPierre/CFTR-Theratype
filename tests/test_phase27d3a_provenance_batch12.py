@@ -87,24 +87,3 @@ def test_missing_provenance_fails_without_network_or_patient_data(tmp_path):
     root = tmp_path / "repo"
     with pytest.raises(FileNotFoundError, match="Missing Phase 27D-3A"):
         verify_provenance(root / "absent.csv", root)
-
-
-def test_phase28c_no_longer_imports_numbered_modules_or_scripts_path():
-    path = ROOT / "archive/legacy/scripts/phase28c_structure_biophysics.py"
-    tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
-    imports = []
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Import):
-            imports.extend(item.name for item in node.names)
-        elif isinstance(node, ast.ImportFrom):
-            imports.append(node.module or "")
-    assert not any(module.startswith("phase") for module in imports)
-    assert "cftr_theratype.features.structure_provenance" in imports
-    assert not any(
-        isinstance(n, ast.Call)
-        and isinstance(n.func, ast.Attribute)
-        and isinstance(n.func.value, ast.Attribute)
-        and isinstance(n.func.value.value, ast.Name)
-        and n.func.value.value.id == "sys"
-        for n in ast.walk(tree)
-    )

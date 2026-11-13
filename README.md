@@ -1,97 +1,72 @@
 # CFTR-Theratype
 
-Reproducible public-data research on CFTR in-vitro functional response, cross-assay transfer and prediction reliability. The genotype-only model development programme is an **exploratory benchmark**, not a clinical treatment recommendation or a demonstrated breakthrough.
+A Python research codebase for CFTR *in-vitro* functional response, cross-assay transfer and forecasting/prediction reliability. Analyses remain **exploratory**: this repository does not provide a clinically validated genotype-to-treatment recommendation.
 
-**Research status: PAUSED (November 2026).** The Stage 6 modular refactor was merged into `main` on 2 November 2026. Historical experiment outputs are exploratory; there is no validated genotype-only treatment-selection model or clinical decision tool. Current `cftr` commands operate on TRAIN-only assays and position-disjoint OOF assignments, but earlier Phase26N/26O and other validation/test runs must be audited before claiming those outcome partitions were never examined.
+**Research status (November 2026): paused / frozen exploratory work.** Frozen development folds and historical evaluation claims must not be presented as independently validated clinical performance. Historical Phase26N, Phase26O and Phase27F validation/final-test execution history should be audited before making any new independence claim.
 
-**Start here:** [Documentation index](docs/INDEX.md) · [Workstation cleanup and local archive](docs/WORKSTATION_CLEANUP.md) · [Preservation and freeze plan](docs/REPOSITORY_FREEZE_AND_CLEANUP.md). Do not delete root ZIPs, `data/`, `results/` or `logs/` before preserving them.
+## What this branch contains
+
+- `src/cftr_theratype/` — retained reusable Python package for assay datasets, features, models, evaluation and selected canonical experiments
+- `tests/` — maintained synthetic and compatibility regression tests
+- `scripts/phase*.py` — **retained legacy compatibility/research entry points**, some of which still contain unique experiment logic
+- `scripts/maintenance.py`, `scripts/maintenance/` — limited maintenance and workstation audit utilities
+- `pyproject.toml` — editable package installation and `cftr` / `cftr-data` entry points
+
+For a smaller, readable default branch, previous `archive/legacy/scripts/` and `docs/` trees and old migration-only tests were **removed from the tracked main tree**. Their historical versions are retained in Git history and in the explicit preservation branch:
+[`preserve/complete-history-before-prune-2026-11-11`](https://github.com/LeFlochPierre/CFTR-Theratype/tree/preserve/complete-history-before-prune-2026-11-11).
+
+**Important:** that branch retains the tracked research code, original methods, old protocols and historical source snapshots. It is not an independent backup, and Git does not contain most ignored research files. Preserve important source, data, results, logs, ZIP patches and third-party assets outside the active working tree before any local disk cleanup. The workstation may also hold untracked later Phase33–39 experiments not represented in this repository.
 
 ## Quick start
 
+From a verified CFTR environment:
+
 ```bash
 conda activate CFTR_ENV
-python -m pip install -e . --no-deps  # preserve the environment used for frozen parity
+python -m pip install -e . --no-deps
 cftr --help
-cftr data validate                   # 210 VTI TRAIN variants, 168 protein positions, 10 folds
-cftr data validate --eti             # also 383 ETI TRAIN variants, 276 positions
-cftr transfer audit                  # ETI-VTI matched-feature check without training
+cftr data validate
+cftr data validate --eti
+cftr transfer audit
 ```
 
-The old `cftr-data` CLI remains available; its build/split commands can overwrite exploratory derived files. Do not rebuild them casually while checking frozen parity.
+The `cftr-data` CLI remains available. Some build/split commands can overwrite derived scientific assets; do not rerun them during cleanup.
 
-## Reproducing frozen TRAIN-only benchmarks
+## Reproducing TRAIN-only development benchmarks
+
+These commands use stored TRAIN cohorts and historical frozen development definitions; output locations should be confirmed before running.
 
 ```bash
-# These may be slow; outputs go into a separate maintenance/refactor directory.
+# Canonical benchmark commands (may be slow)
 cftr benchmark run --target total
 cftr benchmark run --target corrector
 
-# Or compare the already generated Stage 3 OOF CSV files:
+# Compare new and historical development OOF outputs without refitting
 cftr benchmark compare \
   --new results/maintenance/refactor_audit/stage3/full/phase26g_total_oof.csv \
   --reference results/biology/phase26g/phase26g_total_oof.csv
 
-# Existing Stage 3 flags remain supported:
-python -m cftr_theratype.cli benchmark --target total
-python -m cftr_theratype.cli compare --new NEW.csv --reference REFERENCE.csv
-```
-
-The full Phase26G OOF has **420 rows** (210 variants in two repeats) and nine regression model configurations. Both total and corrector predictions were verified to historical tolerance `1e-6` on the source workstation before Stage 6.
-
-## ETI -> VTI auxiliary transfer
-
-```bash
-# Does not inspect protected validation/test response outcomes
+# Auxiliary ETI-to-VTI transfer checks
 cftr transfer audit
-
-# Smoke test (use explicit output directory when repeating):
 cftr transfer run --shuffles 0 --max-folds 1 \
   --outdir results/maintenance/refactor_audit/stage6/transfer_smoke
-
-# Full frozen TRAIN-only Phase26H reproduction; independent outputs:
-cftr transfer run --shuffles 2
-
-# Once full results exist, validate against preserved Phase26H outputs:
-cftr transfer compare \
-  --new results/maintenance/refactor_audit/stage6/transfer/phase26h_oof.csv \
-  --reference results/biology/phase26h/phase26h_oof.csv
 ```
 
-The transfer runner uses all five original Phase26H ETI weight selection and negative-control conventions, excluding held-out positions from auxiliary supervision. The source-level protocol is described in `docs/refactor/STAGE6_MIGRATION.md`. Full historical parity must still be checked on the workstation.
+The Phase26G full repeated OOF contains 420 observations (210 variants × two repeats). Historical parity checks had been performed under the source workstation's original environment; absence of the ignored data in an isolated clone means real-data parity cannot be independently reverified there.
 
-## Existing-results report
+## Tests
 
 ```bash
-cftr analysis report                # reads frozen TRAIN-only Phase26G CSV files
-cftr analysis report --out results/maintenance/refactor_audit/stage6/train_report.md
+PYTHONPATH="$PWD/src" python -m pytest -q -rs tests/
+git diff --check
 ```
 
-Report generation does not retrain models or access final test outcomes. It refuses to overwrite an existing report.
+The optional real-data `tests/test_frozen_loader_parity.py` gate skips when `data/processed/bihler_2026_vti.parquet` is absent; a passing synthetic suite **does not replace** exact scientific parity checks against preserved real TRAIN-only inputs.
 
-## Source structure
+## Scientific and preservation caveats
 
-- `src/cftr_theratype/datasets/`: canonical TRAIN-only cohort/feature loaders
-- `src/cftr_theratype/models/`: shared regression and auxiliary training helpers
-- `src/cftr_theratype/evaluation/`: frozen folds, metrics and leakage checks
-- `src/cftr_theratype/experiments/`: canonical benchmark and transfer entry points
-- `src/cftr_theratype/cli.py`: installed `cftr` CLI (plus old `cftr-data`)
-- `scripts/maintenance/`: safe auditing / reversible source migration
-- `scripts/phase*.py`: **legacy compatibility entry points**, not new code templates
-- `archive/legacy/scripts/`: historical experiments preserved in Git
-- `tests/`: synthetic unit tests and source-parity tests
-- `results/biology/`: historical exploratory result tables; `results/maintenance/`: refactor checks
-
-Historical modules remain importable to preserve old downstream experiments. Stage 6 provides an *optional*, hash-checked migration of 15 duplicated helpers; it does **not** automatically move all 29 remaining legacy scripts. Do not delete the hubs while archived scripts still import them.
-
-## Research and data caveats
-
-Read `docs/RESEARCH_CHECKPOINT.md` and `docs/REFACTOR_STAGE2.md` through `docs/REFACTOR_STAGE5.md` for provenance. Published datasets include Bihler 2024, Bihler 2026, and the McDonald-derived data (not an independent external replication). Raw spreadsheets and external assets may have separate redistribution licenses.
-
-The target is **in-vitro CFTR rescue**, not clinical efficacy. The published 2026 VTI assay is not identical to the marketed vanzacaftor/tezacaftor/deutivacaftor combination. Development folds, even if repeated, are not equivalent to independent clinical cohorts. Reconcile historical VAL/TEST outcome use and execution logs before making any independent evaluation claim; avoid rerunning those analyses during cleanup.
-
-See [Stage 6 migration guide](docs/refactor/STAGE6_MIGRATION.md) for installation, validation, rollback and next steps.
-
-
-## Research freeze and local-only work
-
-The remote GitHub snapshot does not currently include tracked Phase 33–39 code paths, although later-phase ZIP patches exist on RTX6. GitHub also ignores most scientific inputs, outputs and logs. Run the [workstation inventory and cleanup guide](docs/WORKSTATION_CLEANUP.md), retain hash-verified local archives, and only then simplify remaining numbered scripts and duplicate documents. Phase numbers are research history, not supported model versions. The [documentation index](docs/INDEX.md) groups the historical protocols without breaking their original paths.
+- The supervised task is *in-vitro* CFTR rescue; these assays are not direct clinical efficacy measurements or a validated treatment-selection system.
+- Frozen TRAIN folds are grouped by protein position; repeated cross-validation is not an independent patient cohort.
+- Earlier historical scripts may have accessed validation or test outcomes. Do not claim that protected partitions were never viewed without reconstructing execution history.
+- The source and historical experiment protocol remain accessible through the preservation branch, but archived entry points are **not expected to run by their old active paths on a lean checkout**.
+- The tracked-code cleanup does **not** delete or make backups of `data/`, `results/`, `logs/`, local ZIPs, or Git-ignored/untracked sources. Verify independent backups and inventories before pruning the RTX6 research checkout.
