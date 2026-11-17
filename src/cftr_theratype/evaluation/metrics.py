@@ -46,3 +46,42 @@ def paired_ci(d, candidate, baseline, n=5000):
         "ci95_high": float(np.quantile(sims, 0.975)),
         "n_positions": len(values),
     }
+
+
+def phase26h_paired_gain(df, candidate, reference, target, nboot, seed):
+    diff = (
+        np.abs(df[target] - df[reference])
+        - np.abs(df[target] - df[candidate])
+    )
+
+    g = df[["repeat", "protein_position"]].copy()
+    g["gain"] = diff
+
+    values = (
+        g.groupby(["repeat", "protein_position"])
+        .gain.mean()
+        .groupby("protein_position")
+        .mean()
+        .to_numpy()
+    )
+
+    rng = np.random.default_rng(seed)
+
+    sims = np.mean(
+        rng.choice(
+            values,
+            size=(nboot, len(values)),
+            replace=True
+        ),
+        axis=1
+    )
+
+    return {
+        "candidate": candidate,
+        "reference": reference,
+        "target": target,
+        "gain_pp": float(values.mean()),
+        "ci95_low": float(np.quantile(sims, .025)),
+        "ci95_high": float(np.quantile(sims, .975)),
+        "n_independent_positions": len(values)
+    }

@@ -48,3 +48,14 @@ def make_model(name, y_train, seed):
         )
 
     raise KeyError(name)
+
+
+def couple_binary(pl, ph):
+    """Reproduce the existing Phase27B-3 heuristic: NOT calibrated."""
+    pl = np.clip(np.asarray(pl, float), 1e-8, 1.0-1e-8)
+    ph = np.clip(np.asarray(ph, float), 1e-8, 1.0-1e-8)
+    out = np.column_stack([pl*(1-ph), (1-pl)*(1-ph), ph*(1-pl)])
+    out /= out.sum(axis=1, keepdims=True)
+    if not np.isfinite(out).all() or not np.allclose(out.sum(axis=1), 1):
+        raise ValueError('Invalid gate')
+    return out
