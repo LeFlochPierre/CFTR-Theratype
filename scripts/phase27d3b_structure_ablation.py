@@ -33,66 +33,13 @@ def verify_provenance():
 
 
 def load_geometry():
-    if not GEO.is_file():
-        raise FileNotFoundError(f'Missing Phase 27D-3A geometry: {GEO}')
-    raw = pd.read_csv(GEO)
-    if len(raw) != 1480 or raw.position.duplicated().any() or set(raw.position) != set(range(1, 1481)):
-        raise ValueError('Expected one distance row for all 1480 positions')
-    for pdb, names in SPECS.items():
-        obs = raw[names['obs']].to_numpy(int)
-        heavy = raw[names['dmin']].to_numpy(float)
-        ca = raw[names['dca']].to_numpy(float)
-        if not np.isin(obs, [0, 1]).all():
-            raise ValueError(f'Non-binary coverage flags: {pdb}')
-        if ((obs == 1) & (~np.isfinite(heavy) | (heavy < 0))).any():
-            raise ValueError(f'Invalid heavy distances at modelled sites: {pdb}')
-        if ((obs == 1) & (~np.isfinite(ca) | (ca < 0))).any():
-            raise ValueError(f'Invalid CA distances at modelled sites: {pdb}')
-        if ((obs == 0) & np.isfinite(heavy)).any():
-            raise ValueError(f'Unmodelled residues have numeric distances: {pdb}')
-    return raw.set_index('position')
+    from cftr_theratype.features.structure_provenance import load_geometry as shared
+    return shared(GEO)
 
 
 def feature_sets(geometry, positions, seq_proxy, chemistry):
-    """Missing distance gets zero transformed proximity plus observed=0 flag.
-
-    Zero is not treated as a zero-Angstrom distance. Structural mismatch
-    residue 1371 is withheld from BOTH structures' geometry features.
-    """
-    p = np.asarray(positions, int)
-    if (p < 1).any() or (p > 1480).any():
-        raise ValueError('Invalid canonical position')
-    indexed = geometry.loc[p]
-    arrays = {'heavy': [], 'ca': [], 'contacts': []}
-    coverage = []
-    for pdb, names in SPECS.items():
-        obs = indexed[names['obs']].to_numpy(int).astype(bool) & (p != 1371)
-        heavy = indexed[names['dmin']].to_numpy(float)
-        ca = indexed[names['dca']].to_numpy(float)
-        if ((obs) & (~np.isfinite(heavy) | ~np.isfinite(ca))).any():
-            raise ValueError(f'Inconsistent distance/coverage: {pdb}')
-        # 0 transformed proximity means far OR missing, disambiguated by flag.
-        near_heavy = np.where(obs, np.exp(-np.nan_to_num(heavy, nan=1e5) / 10.0), 0.0)
-        near_ca = np.where(obs, np.exp(-np.nan_to_num(ca, nan=1e5) / 10.0), 0.0)
-        arrays['heavy'].append(near_heavy)
-        arrays['ca'].append(near_ca)
-        for threshold in (5., 10., 20.):
-            arrays['contacts'].append((obs & (heavy < threshold)).astype(float))
-        arrays['heavy'].append(obs.astype(float))
-        arrays['ca'].append(obs.astype(float))
-        arrays['contacts'].append(obs.astype(float))
-        coverage.append(obs.astype(float))
-    out = {
-        '3d_heavy': np.column_stack(arrays['heavy']),
-        '3d_ca': np.column_stack(arrays['ca']),
-        '3d_contacts': np.column_stack(arrays['contacts']),
-    }
-    out['seq_plus_3d'] = np.column_stack([seq_proxy, out['3d_heavy']])
-    out['chem_plus_3d'] = np.column_stack([chemistry, out['3d_heavy']])
-    for name, value in out.items():
-        if not np.isfinite(value).all():
-            raise ValueError(f'Nonfinite encoded 3D features: {name}')
-    return out, np.column_stack(coverage)
+    from cftr_theratype.features.structure_provenance import feature_sets as shared
+    return shared(geometry, positions, seq_proxy, chemistry)
 
 
 def position_region(pos, domains):

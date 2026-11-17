@@ -123,3 +123,18 @@ def ap_gain_bootstrap(
         ),
         "positions": len(positions),
     }
+
+
+def phase27d1_evaluation(y, scores):
+    y = np.asarray(y, int)
+    s = np.asarray(scores, float)
+    if len(y) != 210 or len(np.unique(y)) != 2 or not np.isfinite(s).all():
+        raise ValueError('Invalid OOF scores/labels')
+    n = 42
+    top = np.argsort(-s, kind='stable')[:n]
+    return {
+        'ap': float(average_precision_score(y, s)),
+        'auroc': float(roc_auc_score(y, s)),
+        'top20_hits': int(y[top].sum()),
+        'positives': int(y.sum()),
+    }

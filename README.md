@@ -63,6 +63,22 @@ git diff --check
 
 The optional real-data `tests/test_frozen_loader_parity.py` gate skips when `data/processed/bihler_2026_vti.parquet` is absent; a passing synthetic suite **does not replace** exact scientific parity checks against preserved real TRAIN-only inputs.
 
+## Active experiments and historical locks
+
+The supported package commands are `cftr` and `cftr-data`. TRAIN-only benchmark
+and transfer workflows live in `src/cftr_theratype/experiments/`; retained
+`scripts/phase*.py` files are experiment entry points or historical compatibility
+paths. The local Phase 33–39 modules under `src/cftr_theratype/experiments/`
+and their tests are currently untracked research work: preserve them separately
+until they are deliberately added to a versioned research snapshot.
+
+Phase 26N, 26O and 27F are locked evaluation scripts. Their saved manifests
+verify source hashes, and Phase 27F also hashes historical dependency scripts.
+Do not regenerate locked predictions or score them with a changed dependency
+tree. The FoldX resume and Boltz pose-validation scripts remain as historical
+reproducibility assets. [The cleanup report](CLEANUP_REPORT.md) records removed
+standalone tests, retained files and the current lock-hash status.
+
 ## Scientific and preservation caveats
 
 - The supervised task is *in-vitro* CFTR rescue; these assays are not direct clinical efficacy measurements or a validated treatment-selection system.
